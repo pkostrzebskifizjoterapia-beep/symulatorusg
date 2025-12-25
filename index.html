@@ -2148,6 +2148,31 @@ function renderAssistant(){
       ctx.drawImage(state.simCanvas,0,0,w,h,view.imgX,view.imgY,view.imgW,view.imgH);
 
       renderOverlayToMain(ctx,view);
+
+      // Przyciemnienie roboczego obrazu (canvas) — mocniejszy, USG‑podobny gradient (góra jaśniej → dół dużo ciemniej) + delikatna winieta
+      ctx.save();
+      // pionowe przyciemnienie (głębia)
+      const g = ctx.createLinearGradient(0, view.imgY, 0, view.imgY + view.imgH);
+      g.addColorStop(0.00, "rgba(0,0,0,0.22)");
+      g.addColorStop(0.18, "rgba(0,0,0,0.30)");
+      g.addColorStop(0.50, "rgba(0,0,0,0.78)");
+      g.addColorStop(1.00, "rgba(0,0,0,0.93)");
+      ctx.fillStyle = g;
+      ctx.fillRect(view.imgX, view.imgY, view.imgW, view.imgH);
+
+      // winieta (krawędzie/dół nieco ciemniej — jak w typowym B‑mode)
+      const cx = view.imgX + view.imgW * 0.5;
+      const cy = view.imgY + view.imgH * 0.45;
+      const r0 = Math.min(view.imgW, view.imgH) * 0.15;
+      const r1 = Math.max(view.imgW, view.imgH) * 0.80;
+      const vg = ctx.createRadialGradient(cx, cy, r0, cx, cy, r1);
+      vg.addColorStop(0.00, "rgba(0,0,0,0.00)");
+      vg.addColorStop(1.00, "rgba(0,0,0,0.42)");
+      ctx.fillStyle = vg;
+      ctx.fillRect(view.imgX, view.imgY, view.imgW, view.imgH);
+
+      ctx.restore();
+
       ctx.restore();
 
       if(state.showCfBox) drawRoiAndHandles(ctx,view);
