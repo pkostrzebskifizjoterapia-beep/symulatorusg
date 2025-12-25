@@ -2376,6 +2376,8 @@ for(let i=0;i<8;i++){
       bindCanvasPointers();
 
       applyPreset(PRESETS.MSK);
+      // Start TGC sliders at 0 (center) on first load
+      state.tgc = new Array(8).fill(0);
       updateUIValues();
       buildMetricsUI();
       renderAssistant();
