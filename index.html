@@ -721,6 +721,11 @@ body.lockBlur .app, body.lockBlur .app *{pointer-events:none}
               <span class="toggleUi"></span>
               <span>Color Flow</span>
             </label>
+            <label class="toggle">
+              <input type="checkbox" id="tCFBoxVis" checked />
+              <span class="toggleUi"></span>
+              <span>CF box</span>
+            </label>
 </div>
 
           <div class="miniNote">
@@ -1148,6 +1153,7 @@ body.lockBlur .app, body.lockBlur .app *{pointer-events:none}
     const state={
       presetName:"MSK",
       params:{gain:52,drDb:55,fr:35,freqMHz:10.0,depthCm:4.5,cfBox:25,focusCm:2.0,cfOn:false,powerOn:false},
+      showCfBox:true,
       tgc:PRESETS.MSK.tgc.slice(),
       roi:{x:0.35,y:0.30,w:0.30,h:0.24},
       gate:{cx:0.50,cy:0.50,rx:0.34,ry:0.26},
@@ -1218,6 +1224,7 @@ el.roiPill=q("roiPill");
       el.vFocus=q("vFocus");
 
       el.tCF=q("tCF");
+      el.tCFBoxVis=q("tCFBoxVis");
 el.metricsGrid=q("metricsGrid");
 
       el.presetMSK=q("presetMSK");
@@ -1297,6 +1304,7 @@ function updateMeasurePill(){
       }
 
       el.tCF.checked=!!state.params.cfOn;
+      if(el.tCFBoxVis) el.tCFBoxVis.checked=!!state.showCfBox;
 el.modePill.textContent = state.params.cfOn ? "CF" : "B-mode";
 el.roiPill.textContent=(state.params.cfOn||state.params.powerOn)?"ROI ACTIVE":"ROI";
       updateMeasurePill();
@@ -1611,7 +1619,7 @@ function renderAssistant(){
         const {x,y}=toCanvasPx(ev);
 
         const r=roiRectPx(view);
-        const h=hitHandle(x,y,r);
+        const h=state.showCfBox ? hitHandle(x,y,r) : null;
 
         if(state.params.powerOn){
           const e=gateEllipsePx(r);
@@ -1631,7 +1639,7 @@ function renderAssistant(){
           return;
         }
 
-        if(pointInRect(x,y,r)){
+        if(state.showCfBox && pointInRect(x,y,r)){
           pointer.active=true; pointer.mode="drag-roi";
           pointer.startX=x; pointer.startY=y; pointer.startRoi={...state.roi};
           c.setPointerCapture(ev.pointerId);
@@ -2142,7 +2150,7 @@ function renderAssistant(){
       renderOverlayToMain(ctx,view);
       ctx.restore();
 
-      drawRoiAndHandles(ctx,view);
+      if(state.showCfBox) drawRoiAndHandles(ctx,view);
       drawMeasurement(ctx,view);
       drawDepthScale(ctx,view);
       drawWatermark(ctx,view);
@@ -2263,6 +2271,14 @@ function renderAssistant(){
         if(on) state.params.powerOn=false;
         updateUIValues();
       });
+
+      if(el.tCFBoxVis){
+        el.tCFBoxVis.addEventListener("change",()=>{
+          state.showCfBox = !!el.tCFBoxVis.checked;
+          try{ localStorage.setItem("usg_cfbox_visible", state.showCfBox ? "1" : "0"); }catch(_){ }
+          updateUIValues();
+        });
+      }
 for(let i=0;i<8;i++){
         q(`tgc${i}`).addEventListener("input",()=>{
           state.tgc[i]=Number(q(`tgc${i}`).value);
@@ -2331,6 +2347,13 @@ for(let i=0;i<8;i++){
 
     function init(){
       bindUI();
+
+      // Pamięć ustawienia widoczności CF box (opcjonalne)
+      try{
+        const v=localStorage.getItem("usg_cfbox_visible");
+        if(v!==null) state.showCfBox = (v==="1");
+      }catch(_){ }
+
       buildTgcUI();
       buildNoiseTextures();
       loadLogoForWatermark();
