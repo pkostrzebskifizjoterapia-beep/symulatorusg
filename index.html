@@ -221,6 +221,14 @@
     .btn:active{transform:translateY(1px)}
     .btn.ghost{background:rgba(255,255,255,0.06)}
 
+    .btn.is-active{
+      background:rgba(111,184,255,0.22);
+      border-color:rgba(111,184,255,0.55);
+      box-shadow:inset 0 2px 10px rgba(0,0,0,0.55), 0 10px 22px rgba(0,0,0,0.18);
+      transform:translateY(1px);
+      filter:brightness(1.06);
+    }
+
     .sliderRow{
       display:grid;grid-template-columns:128px 1fr 112px;
       gap:10px;align-items:center;margin:12px 0;
@@ -342,7 +350,7 @@
       padding:6px 10px;
       border:1px solid rgba(255,255,255,0.14);
       border-radius:14px;
-      background:rgba(0,0,0,0.12);
+      background:#121A23;
     }
 
     .scoreBox{
@@ -430,18 +438,23 @@
   padding:18px;
 }
 .lockCard{
-  width:min(520px,92vw);
+  width:min(720px,94vw);
   border-radius:20px;
-  border:1px solid rgba(255,255,255,0.14);
-  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.20)), var(--panel);
+  border:1px solid rgba(255,255,255,0.16);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.18), rgba(160,160,160,0.10)),
+    rgba(24,28,34,0.92);
   box-shadow:0 28px 90px rgba(0,0,0,0.55);
   padding:18px;
+  max-height:92vh;
+  overflow:auto;
 }
 .lockTop{display:flex;align-items:center;gap:14px;margin-bottom:12px}
 .lockLogo{
   width:72px;height:72px;border-radius:16px;
   border:1px solid rgba(255,255,255,0.18);
-  background:rgba(0,0,0,0.12);
+  background:#121A23;
+  padding:4px;
   display:grid;place-items:center;overflow:hidden;flex:0 0 auto;
 }
 .lockLogo img{width:64px;height:64px;object-fit:contain;display:block}
@@ -465,6 +478,42 @@
 }
 .lockBtn:hover{filter:brightness(1.06)}
 .lockError{margin-top:10px;color:rgba(255,110,110,0.95);font-weight:950;min-height:22px}
+
+.lockIntroBox{
+  margin-top:12px;
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,0.14);
+  background: rgba(210,210,210,0.12);
+  padding:12px;
+}
+.lockIntroGrid{
+  display:grid;
+  grid-template-columns:96px 1fr;
+  gap:12px;
+  align-items:start;
+}
+.lockPiotrAvatar{
+  width:96px;height:96px;border-radius:50%;
+  overflow:hidden;
+  border:1px solid rgba(0,0,0,0.20);
+  background: rgba(255,255,255,0.88);
+  box-shadow:0 18px 40px rgba(0,0,0,0.30);
+}
+.lockPiotrAvatar img{width:100%;height:100%;object-fit:cover;display:block}
+.lockIntroText{
+  color:rgba(255,255,255,0.86);
+  font-size:14px;
+  line-height:1.45;
+  font-weight:400;
+}
+.lockIntroText p{margin:0 0 10px}
+.lockIntroText p:last-child{margin-bottom:0}
+.lockIntroText .sig{margin-top:10px;color:rgba(255,255,255,0.92);font-weight:1100}
+@media (max-width:560px){
+  .lockCard{width:min(760px,94vw)}
+  .lockIntroGrid{grid-template-columns:1fr}
+  .lockPiotrAvatar{width:110px;height:110px}
+}
 body.lockBlur{overflow:hidden}
 body.lockBlur .app{filter: blur(6px) saturate(0.95);transform:translateZ(0)}
 body.lockBlur .app, body.lockBlur .app *{pointer-events:none}
@@ -527,6 +576,20 @@ body.lockBlur .app, body.lockBlur .app *{pointer-events:none}
       </div>
     </div>
 
+    <div class="lockIntroBox" aria-label="Informacja wprowadzająca">
+      <div class="lockIntroGrid">
+        <div class="lockPiotrAvatar" aria-hidden="true"><img src="piotr.png" alt="mgr Piotr Kostrzębski" /></div>
+        <div class="lockIntroText">
+          <p>Stworzyłem dla Ciebie symulator USG, który pomoże CI zrozumieć zależności niektórych parametrów. Nie jest to idealne odwzorowanie, jednak podstawowe funkcje i zależności są ze sobą sprzężone. Starałem się odwzorować funkcje ultradźwięków i ich fizykę w podstawowy sposób. Wyświetli Ci się na dole strony Asystent „Wujek Piotrek radzi” - możesz próbować sugerować się jego podpowiedziami (nie gwarantuję, że zawsze będą perfekcyjne) ale zawsze bazuj na tym co chcesz zobaczyć.</p>
+
+          <p>Symulator pełni rolę edukacyjną i może być dobrą „zabawą” wprowadzającą do świata USG, który dla Ciebie stworzyłem.</p>
+
+          <p>Pozdrawiam i zapraszam do uczestnictwa w kursie „Stopa pod głowicą"</p>
+          <p class="sig">mgr Piotr Kostrzębski</p>
+        </div>
+      </div>
+    </div>
+
     <div class="lockForm">
       <input id="lockPass" class="lockInput" type="password" placeholder="Hasło" autocomplete="off" />
       <button id="lockBtn" class="lockBtn" type="button">Wejdź</button>
@@ -579,8 +642,8 @@ body.lockBlur .app, body.lockBlur .app *{pointer-events:none}
         </div>
         <div class="screenLegend">
           <div class="legendPill">Tryb: <strong id="modePill">B-mode</strong></div>
-          <div class="legendPill">Źródło: <strong id="imgPill">Phantom</strong></div>
           <div class="legendPill"><strong id="roiPill">ROI</strong> — przeciągnij / zmień rozmiar</div>
+          <div class="legendPill">Pomiar: <strong id="measPill">OFF</strong></div>
         </div>
       </section>
 
@@ -597,6 +660,8 @@ body.lockBlur .app, body.lockBlur .app *{pointer-events:none}
           </div>
           <div class="btnRow" style="margin-top:10px">
             <button class="btn ghost" id="btnReset">Reset (MSK)</button>
+            <button class="btn ghost" id="btnMeasure">Pomiar</button>
+            <button class="btn ghost" id="btnMeasureReset" disabled>Reset pomiaru</button>
           </div>
         </div>
 
@@ -656,22 +721,15 @@ body.lockBlur .app, body.lockBlur .app *{pointer-events:none}
               <span class="toggleUi"></span>
               <span>Color Flow</span>
             </label>
-
-            <label class="toggle">
-              <input type="checkbox" id="tPower" />
-              <span class="toggleUi"></span>
-              <span>Power Doppler</span>
-            </label>
-          </div>
+</div>
 
           <div class="miniNote">
-            ROI: przeciągnij / zmień rozmiar. Power: elipsa bramki jest draggable.
+            ROI: przeciągnij / zmień rozmiar.
           </div>
         </div>
 
         <div class="group">
-          <div class="groupTitle">Diagnostyka (opcjonalnie)</div>
-          <details>
+          <details id="techDetails">
             <summary>Metryki techniczne (dla ciekawych)</summary>
             <div class="metricsWrap">
               <div class="metricsGrid" id="metricsGrid"></div>
@@ -1122,7 +1180,10 @@ body.lockBlur .app, body.lockBlur .app *{pointer-events:none}
 
       lastRAF:0,lastSim:0,fpsSmoothed:0,frameIndex:0,
       lastMetricsAt:0,
+      metricsDirty:true,
       metrics:{meanLuma:0,p10:0,p90:0,contrast:0,clippedWhite:0,clippedBlack:0,speckleIndex:0,deepDrop:0,lineVisibility:0},
+
+      measure:{mode:false,stage:0,ax:0,ay:0,bx:0,by:0,valueCm:null},
 
       uiRecs:[],
       _logoImg:null
@@ -1156,8 +1217,7 @@ body.lockBlur .app, body.lockBlur .app *{pointer-events:none}
       el.usgCanvas=q("usgCanvas");
       el.tgcGrid=q("tgcGrid");
       el.modePill=q("modePill");
-      el.imgPill=q("imgPill");
-      el.roiPill=q("roiPill");
+el.roiPill=q("roiPill");
 
       el.sGain=q("sGain"); el.vGain=q("vGain");
       el.sDR=q("sDR"); el.vDR=q("vDR");
@@ -1170,14 +1230,16 @@ body.lockBlur .app, body.lockBlur .app *{pointer-events:none}
       el.vFocus=q("vFocus");
 
       el.tCF=q("tCF");
-      el.tPower=q("tPower");
-
-      el.metricsGrid=q("metricsGrid");
+el.metricsGrid=q("metricsGrid");
 
       el.presetMSK=q("presetMSK");
       el.presetSuperficial=q("presetSuperficial");
       el.presetThyroid=q("presetThyroid");
       el.btnReset=q("btnReset");
+      el.btnMeasure=q("btnMeasure");
+      el.btnMeasureReset=q("btnMeasureReset");
+
+      el.measPill=q("measPill");
 
       el.scoreValue=q("scoreValue");
       el.scoreSub=q("scoreSub");
@@ -1190,6 +1252,35 @@ body.lockBlur .app, body.lockBlur .app *{pointer-events:none}
       el.statRes=q("statRes");
       el.statQuality=q("statQuality");
       el.statMode=q("statMode");
+    }
+
+    
+    function updateButtonStates(){
+      // Efekt „wciśnięcia” dla presetów i trybu pomiaru (reset-y tylko dotyk)
+      if(el.presetMSK) el.presetMSK.classList.toggle("is-active", state.presetName==="MSK");
+      if(el.presetSuperficial) el.presetSuperficial.classList.toggle("is-active", state.presetName==="Superficial");
+      if(el.presetThyroid) el.presetThyroid.classList.toggle("is-active", state.presetName==="Thyroid");
+      if(el.btnMeasure) el.btnMeasure.classList.toggle("is-active", !!(state.measure && state.measure.mode));
+    }
+
+function updateMeasurePill(){
+      if(!el.measPill) return;
+      const m=state.measure;
+      let text="OFF";
+      if(m && m.mode){
+        if(m.stage===0) text="ON";
+        else if(m.stage===1) text="punkt 2…";
+        else if(m.stage===2 && Number.isFinite(m.valueCm)) text=`${m.valueCm.toFixed(1)} cm`;
+        else text="ON";
+      }
+      if(el.measPill.textContent!==text) el.measPill.textContent=text;
+      updateButtonStates();
+
+      // Reset pomiaru: dostępny po wskazaniu 1. lub 2. punktu (nawet jeśli wynik nie jest liczbowy)
+      if(el.btnMeasureReset){
+        const canReset = !!m && (m.stage===1 || m.stage===2);
+        el.btnMeasureReset.disabled = !canReset;
+      }
     }
 
     function updateUIValues(){
@@ -1209,6 +1300,8 @@ body.lockBlur .app, body.lockBlur .app *{pointer-events:none}
         if(el.vFocus) el.vFocus.textContent = `${state.params.focusCm.toFixed(1)} cm`;
       }
 
+
+
       for(let i=0;i<8;i++){
         const v=state.tgc[i];
         q(`tgcVal${i}`).textContent=(v>=0?"+":"")+v;
@@ -1216,11 +1309,11 @@ body.lockBlur .app, body.lockBlur .app *{pointer-events:none}
       }
 
       el.tCF.checked=!!state.params.cfOn;
-      el.tPower.checked=!!state.params.powerOn;
-
-      el.modePill.textContent = state.params.powerOn ? "POWER" : (state.params.cfOn ? "CF" : "B-mode");
-      el.imgPill.textContent="Phantom";
-      el.roiPill.textContent=(state.params.cfOn||state.params.powerOn)?"ROI ACTIVE":"ROI";
+el.modePill.textContent = state.params.cfOn ? "CF" : "B-mode";
+el.roiPill.textContent=(state.params.cfOn||state.params.powerOn)?"ROI ACTIVE":"ROI";
+      updateMeasurePill();
+      updateButtonStates();
+      state.metricsDirty = true;
     }
 
     function buildMetricsUI(){
@@ -1236,9 +1329,27 @@ body.lockBlur .app, body.lockBlur .app *{pointer-events:none}
         ["p10", m.p10.toFixed(3)],
         ["p90", m.p90.toFixed(3)]
       ];
-      el.metricsGrid.innerHTML=rows.map(([k,v])=>`
-        <div class="metric"><div class="k">${k}</div><div class="v">${v}</div></div>
-      `).join("");
+
+      // Stabilne aktualizacje: bez przebudowy całej siatki (eliminuje miganie)
+      if(!state._metricsNodes){
+        state._metricsNodes = {};
+        const baseExisting=[...el.metricsGrid.querySelectorAll('[data-base="1"]')];
+        baseExisting.forEach(n=>n.remove());
+
+        for(const [k] of rows){
+          const card=document.createElement("div");
+          card.className="metric";
+          card.dataset.base="1";
+          card.innerHTML=`<div class="k">${k}</div><div class="v"></div>`;
+          el.metricsGrid.prepend(card);
+          state._metricsNodes[k]=card.querySelector(".v");
+        }
+      }
+
+      for(const [k,v] of rows){
+        const node=state._metricsNodes[k];
+        if(node && node.textContent!==v) node.textContent=v;
+      }
     }
 
 function renderAssistant(){
@@ -1441,6 +1552,68 @@ function renderAssistant(){
       return (dx*dx+dy*dy)<=1.0;
     }
 
+
+    function handleMeasurePoint(x,y,view){
+      const m=state.measure;
+      if(!m || !m.mode) return;
+
+      // tylko w obszarze obrazu
+      if(x<view.imgX || x>view.imgX+view.imgW || y<view.imgY || y>view.imgY+view.imgH) return;
+
+      if(m.stage===0 || m.stage===2){
+        m.stage=1;
+        m.ax=x; m.ay=y;
+        m.bx=x; m.by=y;
+        m.valueCm=null;
+      }else if(m.stage===1){
+        m.stage=2;
+        m.bx=x; m.by=y;
+
+        const dx=(m.bx-m.ax);
+        const dy=(m.by-m.ay);
+        const cmPerPx = state.params.depthCm / Math.max(1, view.imgH);
+        m.valueCm = Math.sqrt((dx*cmPerPx)*(dx*cmPerPx) + (dy*cmPerPx)*(dy*cmPerPx));
+      }
+      updateMeasurePill();
+    }
+
+    function drawMeasurement(ctx,view){
+      const m=state.measure;
+      if(!m || !m.mode || m.stage===0) return;
+
+      ctx.save();
+      ctx.lineWidth=Math.max(2,2*state.dpr);
+      ctx.strokeStyle="rgba(134,247,182,0.92)";
+      ctx.fillStyle="rgba(134,247,182,0.92)";
+      ctx.shadowColor="rgba(0,0,0,0.55)";
+      ctx.shadowBlur=10*state.dpr;
+
+      ctx.beginPath();
+      ctx.moveTo(m.ax,m.ay);
+      ctx.lineTo(m.bx,m.by);
+      ctx.stroke();
+
+      ctx.shadowBlur=0;
+      const r=5*state.dpr;
+      ctx.beginPath(); ctx.arc(m.ax,m.ay,r,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(m.bx,m.by,r,0,Math.PI*2); ctx.fill();
+
+      if(m.stage===2 && Number.isFinite(m.valueCm)){
+        const mx=(m.ax+m.bx)/2;
+        const my=(m.ay+m.by)/2;
+        ctx.font=`${Math.round(14*state.dpr)}px system-ui`;
+        ctx.fillStyle="rgba(255,255,255,0.92)";
+        const text=`${m.valueCm.toFixed(1)} cm`;
+        ctx.fillText(text, mx+10*state.dpr, my-10*state.dpr);
+      }else if(m.stage===1){
+        ctx.font=`${Math.round(14*state.dpr)}px system-ui`;
+        ctx.fillStyle="rgba(255,255,255,0.80)";
+        ctx.fillText("pomiar…", m.bx+10*state.dpr, m.by-10*state.dpr);
+      }
+
+      ctx.restore();
+    }
+
     function bindCanvasPointers(){
       const c=state.displayCanvas;
 
@@ -1474,12 +1647,22 @@ function renderAssistant(){
           pointer.startX=x; pointer.startY=y; pointer.startRoi={...state.roi};
           c.setPointerCapture(ev.pointerId);
         }
+
+        if(state.measure.mode && !pointer.active){
+          handleMeasurePoint(x,y,view);
+        }
       });
 
       c.addEventListener("pointermove",(ev)=>{
-        if(!pointer.active) return;
         const view=computeViewLayout();
         const {x,y}=toCanvasPx(ev);
+
+        if(state.measure.mode && state.measure.stage===1 && !pointer.active){
+          state.measure.bx=x; state.measure.by=y;
+          return;
+        }
+
+        if(!pointer.active) return;
         const dx=x-pointer.startX;
         const dy=y-pointer.startY;
 
@@ -1610,7 +1793,8 @@ function renderAssistant(){
       const i1=Math.min(7,i0+1);
       const f=pos-i0;
       const v=U.lerp(state.tgc[i0],state.tgc[i1],f);
-      const mul=Math.pow(10,(v*0.55)/20);
+      // Mocniejsze działanie TGC (bardziej widoczny gradient przy przesuwaniu suwaków)
+      const mul=Math.pow(10,(v*1.25)/20);
       return mul;
     }
 
@@ -1763,7 +1947,9 @@ function renderAssistant(){
       const img=state.overlayCtx.createImageData(rw,rh);
       const d=img.data;
 
-      const t=state.frameIndex*0.016;
+      const t=(typeof state.animT==="number" ? state.animT : state.frameIndex*0.016);
+      // Animacja barw CF (delikatne pulsowanie, zamiast statycznych kolorów)
+      const ca = 0.5 + 0.5*Math.sin(t*2.4);
       const gate={cx:state.gate.cx*rw,cy:state.gate.cy*rh,rx:state.gate.rx*rw,ry:state.gate.ry*rh};
 
       for(let y=0;y<rh;y++){
@@ -1794,9 +1980,16 @@ function renderAssistant(){
           }else{
             const dir=(flow>=0)?1:-1;
             const p2=U.clamp(mag,0,1);
-            a=U.clamp(p2*0.70,0,0.70);
-            if(dir>0){ rr=255; gg=30; bb=20; }
-            else { rr=20; gg=130; bb=255; }
+            a=U.clamp(p2*0.60,0,0.60);
+            if(dir>0){
+              rr=255;
+              gg=Math.round(30 + 90*ca);
+              bb=Math.round(20 + 50*(1-ca));
+            } else {
+              rr=Math.round(20 + 90*(1-ca));
+              gg=Math.round(130 + 70*ca);
+              bb=255;
+            }
           }
 
           const i=(y*rw+x)*4;
@@ -1807,7 +2000,7 @@ function renderAssistant(){
       state.overlayCtx.putImageData(img,rx0,ry0);
 
       mainCtx.save();
-      mainCtx.globalCompositeOperation="screen";
+      mainCtx.globalCompositeOperation="source-over";
       mainCtx.imageSmoothingEnabled=true;
       mainCtx.drawImage(state.overlayCanvas,0,0,w,h,view.imgX,view.imgY,view.imgW,view.imgH);
       mainCtx.restore();
@@ -1961,6 +2154,7 @@ function renderAssistant(){
       ctx.restore();
 
       drawRoiAndHandles(ctx,view);
+      drawMeasurement(ctx,view);
       drawDepthScale(ctx,view);
       drawWatermark(ctx,view);
 
@@ -1974,6 +2168,9 @@ function renderAssistant(){
       if(!state.lastRAF) state.lastRAF=now;
       const dt=now-state.lastRAF;
       state.lastRAF=now;
+
+      // czas dla animacji (np. CF) — niezależny od liczby klatek symulacji
+      state.animT = now * 0.001;
 
       const instFps=dt>0?(1000/dt):0;
       state.fpsSmoothed=state.fpsSmoothed ? (state.fpsSmoothed*0.92 + instFps*0.08) : instFps;
@@ -1996,9 +2193,12 @@ function renderAssistant(){
         state.frameIndex++;
       }
 
-      if(now-state.lastMetricsAt>650){
-        state.lastMetricsAt=now;
-        state.metrics=window.Assistant.computeMetrics(state.simLuma,state.simW,state.simH);
+      const duePeriodic = (now - state.lastMetricsAt) > 650;
+      const dueDirty = !!state.metricsDirty && (now - state.lastMetricsAt) > 180;
+      if(duePeriodic || dueDirty){
+        state.lastMetricsAt = now;
+        state.metricsDirty = false;
+        state.metrics = window.Assistant.computeMetrics(state.simLuma,state.simW,state.simH);
         buildMetricsUI();
         renderAssistant();
       }
@@ -2074,14 +2274,7 @@ function renderAssistant(){
         if(on) state.params.powerOn=false;
         updateUIValues();
       });
-      el.tPower.addEventListener("change",()=>{
-        const on=el.tPower.checked;
-        state.params.powerOn=on;
-        if(on) state.params.cfOn=false;
-        updateUIValues();
-      });
-
-      for(let i=0;i<8;i++){
+for(let i=0;i<8;i++){
         q(`tgc${i}`).addEventListener("input",()=>{
           state.tgc[i]=Number(q(`tgc${i}`).value);
           updateUIValues();
@@ -2092,6 +2285,45 @@ function renderAssistant(){
       el.presetSuperficial.addEventListener("click",()=>applyPreset(PRESETS.Superficial));
       el.presetThyroid.addEventListener("click",()=>applyPreset(PRESETS.Thyroid));
       el.btnReset.addEventListener("click",()=>applyPreset(PRESETS.MSK));
+
+      // Pomiar: tryb edukacyjny — kliknij 2 punkty na ekranie USG
+      el.btnMeasure.addEventListener("click",()=>{
+        state.measure.mode = !state.measure.mode;
+        if(!state.measure.mode){
+          state.measure.stage=0;
+          state.measure.valueCm=null;
+        }
+        updateMeasurePill();
+      });
+
+      // Reset pomiaru (po wykonaniu lub w trakcie)
+      if(el.btnMeasureReset){
+        el.btnMeasureReset.addEventListener("click",()=>{
+          const m=state.measure;
+          m.stage=0;
+          m.valueCm=null;
+          m.ax=0; m.ay=0; m.bx=0; m.by=0;
+          updateMeasurePill();
+        });
+      }
+
+      document.addEventListener("keydown",(e)=>{
+        if(e.key && e.key.toLowerCase()==="m"){
+          state.measure.mode = !state.measure.mode;
+          if(!state.measure.mode){
+            state.measure.stage=0;
+            state.measure.valueCm=null;
+          }
+          updateMeasurePill();
+        }
+        if(e.key==="Escape" && state.measure.mode){
+          // szybkie czyszczenie pomiaru
+          state.measure.stage=0;
+          state.measure.valueCm=null;
+          updateMeasurePill();
+        }
+      });
+
 
       el.recs.addEventListener("click",(ev)=>{
         const btn=ev.target.closest(".applyBtn");
@@ -2147,7 +2379,7 @@ function renderAssistant(){
   </script>
 
   <script>
-  // asysta-merge.js (inline)
+// asysta-merge.js (inline)
   // Warstwa edukacyjna przeniesiona z asysta.html — dodana w sposób nieinwazyjny:
   // - nie dotyka logiki symulatora z probna.html
   // - jedynie dopisuje krótkie objaśnienia oraz 4 statystyki w metrykach
@@ -2187,7 +2419,7 @@ function renderAssistant(){
         cfBox:num("sCFBox"),
         focusCm:num("sFocus"),
         cfOn:bool("tCF"),
-        powerOn:bool("tPower"),
+        powerOn:false,
         tgc
       };
     }
@@ -2290,16 +2522,28 @@ function renderAssistant(){
       const grid=q(gridId);
       if(!grid) return;
 
-      const existing=[...grid.querySelectorAll('[data-asysta="1"]')];
-      existing.forEach(n=>n.remove());
+      let wrap = grid.querySelector('[data-asysta-wrap="1"]');
+      if(!wrap){
+        wrap=document.createElement("div");
+        wrap.dataset.asystaWrap="1";
+        wrap.style.display="contents";
+        wrap.innerHTML = `
+          <div class="metric" data-asysta="1"><div class="k">axial (mm)</div><div class="v" data-k="axial">—</div></div>
+          <div class="metric" data-asysta="1"><div class="k">lateral (mm)</div><div class="v" data-k="lateral">—</div></div>
+          <div class="metric" data-asysta="1"><div class="k">penetration</div><div class="v" data-k="pen">—</div></div>
+          <div class="metric" data-asysta="1"><div class="k">snr (dB)</div><div class="v" data-k="snr">—</div></div>
+        `;
+        grid.appendChild(wrap);
+      }
 
-      const html = `
-        <div class="metric" data-asysta="1"><div class="k">axialRes (mm)</div><div class="v">${extra.axialResMm.toFixed(2)}</div></div>
-        <div class="metric" data-asysta="1"><div class="k">lateralRes (mm)</div><div class="v">${extra.lateralResMm.toFixed(2)}</div></div>
-        <div class="metric" data-asysta="1"><div class="k">penetration</div><div class="v">${extra.penetration}</div></div>
-        <div class="metric" data-asysta="1"><div class="k">snr (dB)</div><div class="v">${extra.snrDb.toFixed(0)}</div></div>
-      `;
-      grid.insertAdjacentHTML("beforeend", html);
+      const set=(key,val)=>{
+        const n=wrap.querySelector(`[data-k="${key}"]`);
+        if(n && n.textContent!==val) n.textContent=val;
+      };
+      set("axial", extra.axialResMm.toFixed(2));
+      set("lateral", extra.lateralResMm.toFixed(2));
+      set("pen", extra.penetration);
+      set("snr", extra.snrDb.toFixed(0));
     }
 
     let lastSig="";
@@ -2368,22 +2612,64 @@ function renderAssistant(){
       requestAnimationFrame(tick);
     });
   })();
-  </script>
+</script>
+
+<script>
+// details-fix.js — wymusza poprawne zwijanie/rozwijanie panelu „Metryki techniczne”
+// + stabilizacja layoutu (żeby ekran USG wracał do poprzedniego rozmiaru po zwinięciu)
+(function(){
+  const d = document.getElementById("techDetails");
+  if(!d) return;
+  const s = d.querySelector("summary");
+  if(!s) return;
+
+  function flushLayout(){
+    const consoleEl = document.querySelector(".console");
+    if(consoleEl) consoleEl.getBoundingClientRect();
+    else document.body.getBoundingClientRect();
+  }
+
+  function toggle(e){
+    if(e) e.preventDefault();
+    d.open = !d.open;
+
+    // Wymuś reflow teraz i po kolejnej klatce — usuwa przypadki „zawieszonego” układu po zwinięciu.
+    flushLayout();
+    requestAnimationFrame(flushLayout);
+  }
+
+  s.addEventListener("click", toggle);
+  s.addEventListener("keydown", (e)=>{
+    if(e.key === "Enter" || e.key === " "){
+      toggle(e);
+    }
+  });
+})();
+</script>
 
 
 <script>
-// lock.js (inline) — prosta blokada hasłem (frontend)
+// lock.js (inline) — prosta blokada hasłem (frontend) + utrzymanie sesji (localStorage)
 (function(){
   "use strict";
   const PASS = "STOPAPODGLOWICA";
+  const KEY  = "usg_lock_ok_v1";
 
   const lockScreen = document.getElementById("lockScreen");
   const input = document.getElementById("lockPass");
   const btn = document.getElementById("lockBtn");
   const err = document.getElementById("lockError");
 
-  function unlock(){
+  function storageGet(){
+    try{ return localStorage.getItem(KEY); }catch(_){ return null; }
+  }
+  function storageSet(){
+    try{ localStorage.setItem(KEY,"1"); }catch(_){}
+  }
+
+  function unlock(persist){
     if(!lockScreen) return;
+    if(persist) storageSet();
     lockScreen.style.display = "none";
     document.body.classList.remove("lockBlur");
   }
@@ -2392,7 +2678,7 @@ function renderAssistant(){
     const v = (input?.value || "").trim();
     if(v === PASS){
       err.textContent = "";
-      unlock();
+      unlock(true);
     }else{
       err.textContent = "Nieprawidłowe hasło.";
       if(input){
@@ -2400,6 +2686,12 @@ function renderAssistant(){
         input.select();
       }
     }
+  }
+
+  // jeśli użytkownik już się logował — utrzymaj sesję po refresh
+  if(storageGet() === "1"){
+    unlock(false);
+    return;
   }
 
   if(btn) btn.addEventListener("click", tryUnlock);
