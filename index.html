@@ -1,0 +1,2413 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>USG Console – Stopa pod głowicą</title>
+
+  <style>
+    :root{
+      --bg:#0B1016;
+      --panel:#121A23;
+      --panel2:#0F1720;
+
+      /* JAŚNIEJSZY TOP BAR (dla lepszej czytelności logo) */
+      --header:#424A55;
+      --headerStroke:#67717D;
+
+      --stroke:rgba(255,255,255,0.10);
+      --text:rgba(255,255,255,0.92);
+      --muted:rgba(255,255,255,0.68);
+      --faint:rgba(255,255,255,0.45);
+
+      --accent:#6FB8FF;
+      --ok:#86F7B6;
+      --warn:#FFD36E;
+      --bad:#FF6E6E;
+
+      --radius:14px;
+      --pad:14px;
+      --font:17px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:
+        radial-gradient(900px 640px at 15% 30%, rgba(111,184,255,0.10), transparent 60%),
+        radial-gradient(900px 640px at 85% 75%, rgba(134,247,182,0.06), transparent 62%),
+        linear-gradient(180deg, rgba(255,255,255,0.02), transparent 35%),
+        var(--bg);
+      color:var(--text);
+      font:500 var(--font)/1.35 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans";
+    }
+
+    .app{min-height:100%;display:flex;flex-direction:column}
+
+    /* ===== TOP BAR (jaśniejszy grafit) ===== */
+    .topBar{
+      position:relative;
+      background:
+        radial-gradient(1200px 90px at 50% 0%, rgba(111,184,255,0.22), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,0.14), rgba(0,0,0,0.06)),
+        linear-gradient(180deg, #7A8797 0%, #667384 45%, #556171 100%);
+      border-bottom:1px solid rgba(255,255,255,0.16);
+      box-shadow:0 16px 55px rgba(0,0,0,0.38);
+      backdrop-filter: blur(6px);
+    }
+    .topBar::after{
+      content:"";
+      position:absolute;
+      left:0;right:0;bottom:-1px;
+      height:2px;
+      background:linear-gradient(90deg, transparent, rgba(111,184,255,0.92), rgba(134,247,182,0.70), transparent);
+      opacity:0.85;
+      pointer-events:none;
+    }
+    .topBarInner{
+      width:min(1500px, 96vw);
+      margin:0 auto;
+      padding:12px 10px;
+      display:grid;
+      grid-template-columns: minmax(320px, 460px) 1fr minmax(140px, 260px);
+      gap:12px;
+      align-items:center;
+    }
+    .brand{display:flex;align-items:center;gap:12px;min-width:0}
+    .brandLogoWrap{
+      width:80px;height:80px;border-radius:14px;
+      background:rgba(255,255,255,0.14);
+      border:1px solid rgba(255,255,255,0.32);
+      display:grid;place-items:center;
+      overflow:hidden;flex:0 0 auto;
+    }
+    .brandLogoWrap img{width:76px;height:76px;object-fit:contain;display:block}
+    .brandText{min-width:0}
+    .brandName{
+      font-weight:950;letter-spacing:.2px;
+      color:rgba(255,255,255,0.94);
+      line-height:1.1;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .brandSub{
+      margin-top:4px;
+      font-size:13px;
+      color:rgba(255,255,255,0.70);
+      font-weight:800;
+      letter-spacing:.12px;
+    }
+
+    .titleBlock{
+      text-align:center;
+      padding:4px 8px;
+      border-left:1px solid rgba(255,255,255,0.10);
+      border-right:1px solid rgba(255,255,255,0.10);
+    }
+    .title{
+      font-size:28px;
+      font-weight:1000;
+      letter-spacing:1.2px;
+      text-transform:uppercase;
+      color:rgba(255,255,255,0.96);
+      line-height:1.15;
+    }
+    .subtitle{
+      margin-top:4px;
+      color:rgba(255,255,255,0.78);
+      font-weight:850;
+      font-size:14px;
+    }
+
+    .topRight{display:flex;justify-content:flex-end;align-items:center;gap:10px;color:rgba(255,255,255,0.78);font-weight:850;font-size:14px;white-space:nowrap}
+    .topRightPill{
+      border:1px solid rgba(255,255,255,0.18);
+      background:rgba(0,0,0,0.14);
+      border-radius:999px;
+      padding:8px 12px;
+      display:flex;align-items:center;gap:8px;
+    }
+    .dot{
+      width:10px;height:10px;border-radius:999px;display:inline-block;
+      background:rgba(111,184,255,0.95);
+      box-shadow:0 0 0 6px rgba(111,184,255,0.10);
+    }
+
+    .topAvatar{
+      width:34px;height:34px;border-radius:999px;object-fit:cover;display:block;
+      border:1px solid rgba(255,255,255,0.32);
+      box-shadow:0 12px 26px rgba(0,0,0,0.40);
+    }
+
+    /* ===== LAYOUT ===== */
+    .console{
+      width:min(1500px,96vw);
+      margin:14px auto 10px;
+      display:grid;
+      gap:12px;
+      grid-template-columns:280px 1fr 460px;
+      grid-template-areas:
+        "tgc screen controls"
+        "assistant assistant assistant";
+      align-items:stretch;
+    }
+
+    .panel{
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), transparent 90px), var(--panel);
+      border:1px solid var(--stroke);
+      border-radius:var(--radius);
+      padding:var(--pad);
+      overflow-y:auto;
+      min-height:0;
+      box-shadow:0 14px 46px rgba(0,0,0,0.26);
+    }
+    .panelTitle{
+      display:flex;align-items:center;gap:10px;
+      font-weight:1000;letter-spacing:.2px;
+      font-size:18px;margin-bottom:8px;
+    }
+    .chip{
+      font-size:12px;padding:4px 10px;border:1px solid rgba(255,255,255,0.16);
+      border-radius:999px;color:rgba(255,255,255,0.72);
+      background:rgba(0,0,0,0.14);font-weight:900;
+    }
+    .panelHint{color:var(--muted);margin-bottom:10px;font-size:14px}
+
+    .tgcPanel{grid-area:tgc}
+    .controlPanel{grid-area:controls}
+
+    .screenPanel{
+      grid-area:screen;
+      border-radius:var(--radius);
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(0,0,0,0.00)), #000;
+      border:1px solid var(--stroke);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      min-height:0;
+      box-shadow:0 18px 70px rgba(0,0,0,0.34);
+    }
+    .screenWrap{position:relative;width:100%;flex:1 1 auto;min-height:340px}
+    .usgCanvas{width:100%;height:100%;display:block;background:#000;touch-action:none;user-select:none}
+
+    .screenLegend{
+      display:flex;gap:10px;padding:10px 12px;border-top:1px solid rgba(255,255,255,0.10);
+      background:rgba(10,14,18,0.78);justify-content:center;flex-wrap:wrap;
+    }
+    .legendPill{
+      padding:7px 12px;border-radius:999px;border:1px solid rgba(255,255,255,0.16);
+      color:rgba(255,255,255,0.74);background:rgba(0,0,0,0.20);font-size:14px;font-weight:900;
+    }
+    .legendPill strong{color:rgba(255,255,255,0.92)}
+
+    .group{
+      border:1px solid rgba(255,255,255,0.10);
+      border-radius:14px;
+      padding:12px;
+      background:rgba(0,0,0,0.12);
+      margin-bottom:12px;
+    }
+    .groupTitle{font-weight:1000;margin-bottom:10px;color:rgba(255,255,255,0.90);letter-spacing:.15px}
+
+    .btnRow{display:flex;gap:10px;flex-wrap:wrap}
+    .btn{
+      appearance:none;border:1px solid rgba(255,255,255,0.16);
+      background:rgba(111,184,255,0.12);
+      color:rgba(255,255,255,0.92);
+      padding:10px 12px;border-radius:14px;font-weight:1000;cursor:pointer;
+      box-shadow:0 10px 22px rgba(0,0,0,0.18);
+    }
+    .btn:hover{filter:brightness(1.08)}
+    .btn:active{transform:translateY(1px)}
+    .btn.ghost{background:rgba(255,255,255,0.06)}
+
+    .sliderRow{
+      display:grid;grid-template-columns:128px 1fr 112px;
+      gap:10px;align-items:center;margin:12px 0;
+    }
+    .sliderLabel{color:rgba(255,255,255,0.74);font-weight:950}
+    .sliderValue{text-align:right;font-variant-numeric:tabular-nums;color:rgba(255,255,255,0.90);font-weight:950}
+
+    .range{
+      width:100%;
+      appearance:none;height:12px;border-radius:999px;
+      background:linear-gradient(to right, rgba(111,184,255,0.26), rgba(255,255,255,0.10));
+      outline:none;border:1px solid rgba(255,255,255,0.12);
+    }
+    .range::-webkit-slider-thumb{
+      appearance:none;width:28px;height:28px;border-radius:50%;
+      background:rgba(111,184,255,0.95);
+      border:2px solid rgba(0,0,0,0.55);
+      box-shadow:0 10px 18px rgba(0,0,0,0.42), 0 0 0 6px rgba(111,184,255,0.10);
+    }
+    .range::-moz-range-thumb{
+      width:28px;height:28px;border-radius:50%;
+      background:rgba(111,184,255,0.95);
+      border:2px solid rgba(0,0,0,0.55);
+      box-shadow:0 10px 18px rgba(0,0,0,0.42), 0 0 0 6px rgba(111,184,255,0.10);
+    }
+
+    /* Focus slider (poziomy) */
+    .focusRange{
+      appearance:none;
+      -webkit-appearance:none;
+      width:100%;
+      height:12px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.14);
+      background:linear-gradient(to right, rgba(255,190,80,0.22), rgba(255,255,255,0.10));
+      outline:none;
+    }
+    .focusRange::-webkit-slider-thumb{
+      -webkit-appearance:none;
+      width:26px;height:26px;border-radius:50%;
+      background:rgba(255,190,80,0.98);
+      border:2px solid rgba(0,0,0,0.55);
+      box-shadow:0 10px 18px rgba(0,0,0,0.42), 0 0 0 6px rgba(255,190,80,0.10);
+    }
+    .focusRange::-moz-range-thumb{
+      width:26px;height:26px;border-radius:50%;
+      background:rgba(255,190,80,0.98);
+      border:2px solid rgba(0,0,0,0.55);
+      box-shadow:0 10px 18px rgba(0,0,0,0.42), 0 0 0 6px rgba(255,190,80,0.10);
+    }
+
+    .toggleRow{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+    .toggle{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;font-weight:1000;color:rgba(255,255,255,0.90)}
+    .toggle input{display:none}
+    .toggleUi{
+      width:56px;height:30px;border-radius:999px;border:1px solid rgba(255,255,255,0.16);
+      background:rgba(255,255,255,0.06);position:relative;
+      box-shadow:inset 0 0 0 1px rgba(0,0,0,0.25);
+    }
+    .toggleUi::after{
+      content:"";width:24px;height:24px;border-radius:50%;
+      position:absolute;top:2px;left:3px;background:rgba(255,255,255,0.86);
+      transition:transform 160ms ease, background 160ms ease;
+      box-shadow:0 10px 18px rgba(0,0,0,0.35);
+    }
+    .toggle input:checked + .toggleUi{
+      background:rgba(134,247,182,0.14);
+      border-color:rgba(134,247,182,0.42);
+      box-shadow:0 0 0 6px rgba(134,247,182,0.08), inset 0 0 0 1px rgba(0,0,0,0.25);
+    }
+    .toggle input:checked + .toggleUi::after{
+      transform:translateX(26px);
+      background:rgba(134,247,182,0.98);
+    }
+
+    .miniNote{color:var(--faint);font-size:14px;margin-top:10px}
+
+    details{border:1px solid rgba(255,255,255,0.10);border-radius:14px;background:rgba(0,0,0,0.10);overflow:hidden}
+    summary{
+      cursor:pointer;list-style:none;padding:10px 12px;font-weight:1000;color:rgba(255,255,255,0.84);
+      display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,0.08);user-select:none;
+    }
+    summary::-webkit-details-marker{display:none}
+    .metricsWrap{padding:10px 12px}
+    .metricsGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .metric{border:1px solid rgba(255,255,255,0.10);background:rgba(0,0,0,0.10);border-radius:12px;padding:10px}
+    .metric .k{color:rgba(255,255,255,0.68);font-weight:900;font-size:13px}
+    .metric .v{margin-top:4px;font-variant-numeric:tabular-nums;font-weight:1000}
+
+    /* assistant */
+    .assistantPanel{grid-area:assistant;border-radius:var(--radius);overflow:hidden}
+    .assistantCard{
+      border:1px solid rgba(111,184,255,0.26);
+      contain: layout paint; transform: translateZ(0);
+      border-radius:var(--radius);
+      background:
+        radial-gradient(900px 420px at 10% 0%, rgba(111,184,255,0.16), transparent 58%),
+        radial-gradient(900px 420px at 90% 100%, rgba(134,247,182,0.10), transparent 62%),
+        linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.18)),
+        #0E1621;
+      display:grid;grid-template-columns:300px 1fr;gap:14px;padding:14px;
+      box-shadow:0 18px 70px rgba(0,0,0,0.40), 0 0 0 1px rgba(111,184,255,0.10) inset;
+    }
+    .assistantLeft{display:flex;flex-direction:column;gap:12px;align-items:center}
+    .assistantImgFrame{
+      width:220px;border-radius:18px;overflow:hidden;
+      border:1px solid rgba(255,255,255,0.14);
+      background:rgba(0,0,0,0.18);
+    }
+    .assistantImgFrame img{width:100%;height:220px;object-fit:cover;display:block}
+
+    /* napis pod zdjęciem asystenta */
+    .assistantTagline{
+      width:100%;
+      text-align:center;
+      font-weight:1100;
+      letter-spacing:.2px;
+      color:rgba(255,255,255,0.88);
+      padding:6px 10px;
+      border:1px solid rgba(255,255,255,0.14);
+      border-radius:14px;
+      background:rgba(0,0,0,0.12);
+    }
+
+    .scoreBox{
+      width:100%;
+      border:1px solid rgba(255,255,255,0.14);
+      border-radius:18px;padding:14px;background:rgba(0,0,0,0.12);
+    }
+    .scoreLabel{color:rgba(255,255,255,0.72);font-weight:950;letter-spacing:.2px;text-align:center}
+    .scoreValue{font-size:54px;font-weight:1100;margin-top:4px;line-height:1.0;text-align:center}
+    .scoreSub{color:rgba(255,255,255,0.72);margin-top:6px;font-weight:900;text-align:center}
+
+    .assistantRight{min-width:0;font-size:20px}
+    .bubble{
+      border:1px solid rgba(255,255,255,0.14);
+      border-radius:18px;padding:14px;background:rgba(0,0,0,0.12);margin-bottom:12px;
+    }
+    .bubbleTitle{font-weight:1100;letter-spacing:.2px;margin-bottom:8px}
+    .bubbleText{color:rgba(255,255,255,0.90);font-size:20px;white-space:pre-wrap}
+    .assistantSplit{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .assistantCol{
+      border:1px solid rgba(255,255,255,0.14);
+      border-radius:18px;background:rgba(0,0,0,0.10);
+      padding:12px;min-height:160px
+    }
+    .subTitle{font-weight:1100;color:rgba(255,255,255,0.90);margin-bottom:10px}
+    .badge{
+      display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;
+      border:1px solid rgba(255,255,255,0.14);font-weight:1000;margin:4px 8px 4px 0;
+      color:rgba(255,255,255,0.90);background:rgba(255,255,255,0.05);
+    }
+    .badge.ok{border-color:rgba(134,247,182,0.35);background:rgba(134,247,182,0.10)}
+    .badge.warn{border-color:rgba(255,211,110,0.35);background:rgba(255,211,110,0.10)}
+    .badge.bad{border-color:rgba(255,110,110,0.35);background:rgba(255,110,110,0.10)}
+
+    .recItem{
+      border:1px solid rgba(255,255,255,0.14);
+      border-radius:16px;padding:12px;background:rgba(255,255,255,0.04);
+      margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;justify-content:space-between;
+    }
+    .recLeft{min-width:0}
+    .recHead{font-weight:1100;margin-bottom:6px}
+    .recBody{color:rgba(255,255,255,0.84)}
+    .prio{
+      display:inline-flex;align-items:center;gap:8px;padding:4px 10px;border-radius:999px;
+      font-weight:1100;font-size:13px;border:1px solid rgba(255,255,255,0.14);
+      background:rgba(0,0,0,0.14);margin-right:8px;color:rgba(255,255,255,0.92);
+    }
+    .prio.A{border-color:rgba(111,184,255,0.38)}
+    .prio.B{border-color:rgba(134,247,182,0.35)}
+    .prio.C{border-color:rgba(255,211,110,0.35)}
+    .prio.D{border-color:rgba(255,178,77,0.35)}
+    .prio.E{border-color:rgba(255,110,110,0.35)}
+
+    .applyBtn{
+      flex:0 0 auto;appearance:none;border:1px solid rgba(134,247,182,0.35);
+      background:rgba(134,247,182,0.12);color:rgba(255,255,255,0.92);
+      padding:10px 12px;border-radius:14px;font-weight:1100;cursor:pointer;white-space:nowrap;
+      box-shadow:0 10px 18px rgba(0,0,0,0.20);
+    }
+    .applyBtn:hover{filter:brightness(1.08)}
+    .applyBtn:active{transform:translateY(1px)}
+    .applyBtn:disabled{opacity:.45;cursor:not-allowed}
+
+    .assistantFootNote{margin-top:10px;color:rgba(255,255,255,0.55);font-size:14px}
+
+    .statusBar{
+      width:min(1500px,96vw);
+      margin:6px auto 16px;
+      border:1px solid rgba(255,255,255,0.10);
+      border-radius:14px;padding:10px 12px;background:rgba(0,0,0,0.18);
+      display:flex;gap:18px;flex-wrap:wrap;align-items:center;justify-content:center;
+      box-shadow:0 14px 46px rgba(0,0,0,0.20);
+    }
+    .statusItem{color:rgba(255,255,255,0.78);font-weight:1000;font-variant-numeric:tabular-nums}
+
+/* ===== LOCK SCREEN (hasło) ===== */
+.lockScreen{
+  position:fixed;inset:0;z-index:9999;
+  display:flex;align-items:center;justify-content:center;
+  background:
+    radial-gradient(900px 640px at 15% 30%, rgba(111,184,255,0.10), transparent 60%),
+    radial-gradient(900px 640px at 85% 75%, rgba(134,247,182,0.06), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.03), transparent 35%),
+    var(--bg);
+  padding:18px;
+}
+.lockCard{
+  width:min(520px,92vw);
+  border-radius:20px;
+  border:1px solid rgba(255,255,255,0.14);
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.20)), var(--panel);
+  box-shadow:0 28px 90px rgba(0,0,0,0.55);
+  padding:18px;
+}
+.lockTop{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+.lockLogo{
+  width:72px;height:72px;border-radius:16px;
+  border:1px solid rgba(255,255,255,0.18);
+  background:rgba(0,0,0,0.12);
+  display:grid;place-items:center;overflow:hidden;flex:0 0 auto;
+}
+.lockLogo img{width:64px;height:64px;object-fit:contain;display:block}
+.lockTitle{font-weight:1100;font-size:20px;letter-spacing:.2px}
+.lockSub{color:rgba(255,255,255,0.72);font-weight:900;margin-top:4px;font-size:14px}
+.lockForm{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.lockInput{
+  flex:1 1 220px;min-width:220px;height:48px;border-radius:14px;padding:0 14px;
+  border:1px solid rgba(255,255,255,0.18);
+  background:rgba(0,0,0,0.18);
+  color:rgba(255,255,255,0.92);
+  font-weight:900;font-size:16px;outline:none;
+}
+.lockInput:focus{border-color:rgba(111,184,255,0.55);box-shadow:0 0 0 6px rgba(111,184,255,0.10)}
+.lockBtn{
+  height:48px;padding:0 16px;border-radius:14px;
+  border:1px solid rgba(111,184,255,0.45);
+  background:rgba(111,184,255,0.18);
+  color:rgba(255,255,255,0.94);
+  font-weight:1100;cursor:pointer;
+}
+.lockBtn:hover{filter:brightness(1.06)}
+.lockError{margin-top:10px;color:rgba(255,110,110,0.95);font-weight:950;min-height:22px}
+body.lockBlur{overflow:hidden}
+body.lockBlur .app{filter: blur(6px) saturate(0.95);transform:translateZ(0)}
+body.lockBlur .app, body.lockBlur .app *{pointer-events:none}
+
+    @media (max-width:1100px){
+      .topBarInner{grid-template-columns:1fr;gap:10px}
+      .titleBlock{
+        border-left:none;border-right:none;
+        border-top:1px solid rgba(255,255,255,0.10);
+        border-bottom:1px solid rgba(255,255,255,0.10);
+        padding:10px 8px;
+      }
+      .topRight{justify-content:center}
+      .console{
+        width:96vw;
+        grid-template-columns:1fr;
+        grid-template-areas:"screen" "tgc" "controls" "assistant";
+      }
+      .assistantCard{grid-template-columns:1fr}
+      .assistantImgFrame{width:210px}
+      .assistantImgFrame img{height:210px}
+      .sliderRow{grid-template-columns:120px 1fr 110px}
+      .title{font-size:24px}
+    }
+
+@media (max-width:720px){
+  .brandLogoWrap{width:72px;height:72px}
+  .brandLogoWrap img{width:68px;height:68px}
+  .title{font-size:20px}
+  .subtitle{font-size:12px}
+  .brandSub{font-size:12px}
+  .assistantSplit{grid-template-columns:1fr}
+  .metricsGrid{grid-template-columns:1fr}
+}
+@media (max-width:520px){
+  .topBarInner{width:94vw}
+  .title{font-size:18px}
+  .console{margin:10px auto 8px}
+  .panel{padding:12px}
+  .sliderRow{grid-template-columns:1fr;gap:8px}
+  .sliderValue{text-align:left}
+  .assistantImgFrame{width:180px}
+  .assistantImgFrame img{height:180px}
+  .scoreValue{font-size:44px}
+  .legendPill{font-size:13px}
+}
+  </style>
+</head>
+
+<body class="lockBlur">
+
+<!-- LOCK SCREEN -->
+<div id="lockScreen" class="lockScreen" role="dialog" aria-modal="true" aria-label="Logowanie">
+  <div class="lockCard">
+    <div class="lockTop">
+      <div class="lockLogo" aria-hidden="true"><img src="logo.png" alt="Logo" /></div>
+      <div>
+        <div class="lockTitle">Dostęp chroniony hasłem</div>
+        <div class="lockSub">Wpisz hasło, aby uruchomić konsolę</div>
+      </div>
+    </div>
+
+    <div class="lockForm">
+      <input id="lockPass" class="lockInput" type="password" placeholder="Hasło" autocomplete="off" />
+      <button id="lockBtn" class="lockBtn" type="button">Wejdź</button>
+    </div>
+
+    <div id="lockError" class="lockError" aria-live="polite"></div>
+    <div class="miniNote" style="margin-top:10px">Wskazówka: wielkość liter ma znaczenie.</div>
+  </div>
+</div>
+
+  <div class="app">
+    <!-- TOP BAR -->
+    <header class="topBar" aria-label="Nagłówek">
+      <div class="topBarInner">
+        <div class="brand">
+          <div class="brandLogoWrap" aria-hidden="true">
+            <img id="logoImg" alt="Logo" src="logo.png" />
+          </div>
+          <div class="brandText">
+            <div class="brandName">Stopa pod głowicą</div>
+            <div class="brandSub">Symulator konsoli USG</div>
+          </div>
+        </div>
+
+        <div class="titleBlock">
+          <div class="title">STOPA POD GŁOWICĄ</div>
+          <div class="subtitle">autorstwa mgr Piotra Kostrzębskiego</div>
+        </div>
+
+        <div class="topRight">
+          <div class="topRightPill" title="mgr Piotr Kostrzębski">
+            <span class="dot" aria-hidden="true"></span>
+            <img class="topAvatar" src="piotr.png" alt="mgr Piotr Kostrzębski" />
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="console" aria-label="Konsola USG">
+      <!-- TGC -->
+      <section class="panel tgcPanel" aria-label="TGC">
+        <div class="panelTitle">TGC <span class="chip">8 segmentów</span></div>
+<div class="tgcGrid" id="tgcGrid"></div>
+</section>
+
+      <!-- Screen -->
+      <section class="screenPanel" aria-label="Ekran USG">
+        <div class="screenWrap">
+          <canvas id="usgCanvas" class="usgCanvas"></canvas>
+        </div>
+        <div class="screenLegend">
+          <div class="legendPill">Tryb: <strong id="modePill">B-mode</strong></div>
+          <div class="legendPill">Źródło: <strong id="imgPill">Phantom</strong></div>
+          <div class="legendPill"><strong id="roiPill">ROI</strong> — przeciągnij / zmień rozmiar</div>
+        </div>
+      </section>
+
+      <!-- Controls -->
+      <section class="panel controlPanel" aria-label="Panel sterowania">
+        <div class="panelTitle">Parametry <span class="chip">B-mode + Doppler</span></div>
+
+        <div class="group">
+          <div class="groupTitle">Presety</div>
+          <div class="btnRow">
+            <button class="btn" id="presetMSK">MSK</button>
+            <button class="btn" id="presetSuperficial">Superficial</button>
+            <button class="btn" id="presetThyroid">Thyroid</button>
+          </div>
+          <div class="btnRow" style="margin-top:10px">
+            <button class="btn ghost" id="btnReset">Reset (MSK)</button>
+          </div>
+        </div>
+
+        <div class="group">
+          <div class="groupTitle">Suwaki główne</div>
+
+          <!-- FOCUS nad GAIN -->
+          <div class="sliderRow">
+            <div class="sliderLabel">FOCUS</div>
+            <input id="sFocus" class="focusRange" type="range" min="0.3" max="30" step="0.1" />
+            <div class="sliderValue" id="vFocus">—</div>
+          </div>
+
+          <div class="sliderRow">
+            <div class="sliderLabel">Gain</div>
+            <input id="sGain" class="range" type="range" min="0" max="100" step="1" />
+            <div class="sliderValue" id="vGain">—</div>
+          </div>
+
+          <div class="sliderRow">
+            <div class="sliderLabel">DR</div>
+            <input id="sDR" class="range" type="range" min="20" max="120" step="1" />
+            <div class="sliderValue" id="vDR">—</div>
+          </div>
+
+          <div class="sliderRow">
+            <div class="sliderLabel">FR</div>
+            <input id="sFR" class="range" type="range" min="10" max="60" step="1" />
+            <div class="sliderValue" id="vFR">—</div>
+          </div>
+
+          <div class="sliderRow">
+            <div class="sliderLabel">Frequency</div>
+            <input id="sFreq" class="range" type="range" min="2" max="15" step="0.1" />
+            <div class="sliderValue" id="vFreq">—</div>
+          </div>
+
+          <div class="sliderRow">
+            <div class="sliderLabel">Depth</div>
+            <input id="sDepth" class="range" type="range" min="2" max="30" step="0.1" />
+            <div class="sliderValue" id="vDepth">—</div>
+          </div>
+
+          <div class="sliderRow">
+            <div class="sliderLabel">CF box</div>
+            <input id="sCFBox" class="range" type="range" min="0" max="100" step="1" />
+            <div class="sliderValue" id="vCFBox">—</div>
+          </div>
+        </div>
+
+        <div class="group">
+          <div class="groupTitle">Tryby Doppler</div>
+
+          <div class="toggleRow">
+            <label class="toggle">
+              <input type="checkbox" id="tCF" />
+              <span class="toggleUi"></span>
+              <span>Color Flow</span>
+            </label>
+
+            <label class="toggle">
+              <input type="checkbox" id="tPower" />
+              <span class="toggleUi"></span>
+              <span>Power Doppler</span>
+            </label>
+          </div>
+
+          <div class="miniNote">
+            ROI: przeciągnij / zmień rozmiar. Power: elipsa bramki jest draggable.
+          </div>
+        </div>
+
+        <div class="group">
+          <div class="groupTitle">Diagnostyka (opcjonalnie)</div>
+          <details>
+            <summary>Metryki techniczne (dla ciekawych)</summary>
+            <div class="metricsWrap">
+              <div class="metricsGrid" id="metricsGrid"></div>
+              <div class="miniNote" style="margin-top:10px">
+                Asystent poniżej mówi prosto: <strong>co przestawić</strong> i <strong>dlaczego</strong>.
+              </div>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <!-- Assistant -->
+      <section class="assistantPanel" aria-label="Asystent Ultrasonograficzny PRO">
+        <div class="assistantCard">
+          <div class="assistantLeft">
+            <div class="assistantImgFrame">
+              <img id="piotrImg" alt="Asystent – Piotr" src="piotr.png" />
+            </div>
+            <div class="assistantTagline">Wujek Piotrek radzi...</div>
+            <div class="scoreBox">
+              <div class="scoreLabel">Ocena jakości</div>
+              <div class="scoreValue" id="scoreValue">—</div>
+              <div class="scoreSub" id="scoreSub">—</div>
+            </div>
+          </div>
+
+          <div class="assistantRight">
+            <div class="bubble">
+              <div class="bubbleTitle">Asystent Ultrasonograficzny PRO</div>
+              <div class="bubbleText" id="assistantText">Uruchamianie analizy…</div>
+            </div>
+
+            <div class="assistantSplit">
+              <div class="assistantCol">
+                <div class="subTitle">Szybka checklista</div>
+                <div id="checklist"></div>
+              </div>
+              <div class="assistantCol">
+                <div class="subTitle">Co zrobić teraz (max 5)</div>
+                <div id="recs"></div>
+              </div>
+            </div>
+
+            <div class="assistantFootNote" id="assistantFoot"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="statusBar" aria-label="Status">
+      <div class="statusItem">FPS: <span id="statFps">—</span></div>
+      <div class="statusItem">Wewn.: <span id="statRes">—</span></div>
+      <div class="statusItem">Jakość: <span id="statQuality">—</span></div>
+      <div class="statusItem">Tryb: <span id="statMode">—</span></div>
+    </footer>
+  </div>
+
+  <script>
+  // utils.js (inline)
+  (function(){
+    "use strict";
+    const Utils = {
+      clamp(v,a,b){return Math.max(a,Math.min(b,v));},
+      lerp(a,b,t){return a+(b-a)*t;},
+      smoothstep(a,b,v){const t=Utils.clamp((v-a)/(b-a),0,1);return t*t*(3-2*t);},
+      hash01(x,y,seed){
+        let n=(x|0)*374761393+(y|0)*668265263+(seed|0)*1442695040888963407;
+        n=(n^(n>>>13))*1274126177;
+        n=(n^(n>>>16));
+        return ((n>>>0)/4294967295);
+      },
+      hist256(buf){
+        const hist=new Uint32Array(256);
+        for(let i=0;i<buf.length;i++){
+          let v=buf[i]; if(v<0)v=0; if(v>1)v=1;
+          hist[(v*255)|0]++;
+        }
+        return hist;
+      },
+      percentileFromHist(hist,p){
+        let total=0; for(let i=0;i<256;i++) total+=hist[i];
+        if(total===0) return 0;
+        const target=total*p;
+        let acc=0;
+        for(let i=0;i<256;i++){ acc+=hist[i]; if(acc>=target) return i/255; }
+        return 1;
+      }
+    };
+    window.Utils=Utils;
+  })();
+  </script>
+
+  <script>
+  // assistant.js (inline)
+  (function(){
+    "use strict";
+    const U=window.Utils;
+
+    function computeMetrics(luma,w,h){
+      const n=w*h;
+      let sum=0, clippedW=0, clippedB=0;
+      for(let i=0;i<n;i++){
+        const v=luma[i]; sum+=v;
+        if(v>0.98) clippedW++;
+        if(v<0.02) clippedB++;
+      }
+      const mean=sum/Math.max(1,n);
+      const hist=U.hist256(luma);
+      const p10=U.percentileFromHist(hist,0.10);
+      const p90=U.percentileFromHist(hist,0.90);
+      const contrast=U.clamp(p90-p10,0,1);
+
+      const topEnd=Math.max(1,(h*0.2)|0);
+      const botStart=Math.max(0,(h*0.8)|0);
+      let topSum=0,topCnt=0,botSum=0,botCnt=0;
+      for(let y=0;y<h;y++){
+        const row=y*w;
+        if(y<topEnd){ for(let x=0;x<w;x++){ topSum+=luma[row+x]; topCnt++; } }
+        else if(y>=botStart){ for(let x=0;x<w;x++){ botSum+=luma[row+x]; botCnt++; } }
+      }
+      const topMean=topSum/Math.max(1,topCnt);
+      const botMean=botSum/Math.max(1,botCnt);
+      const deepDrop=(topMean>1e-6)?(botMean/topMean):0;
+
+      let lvSum=0,lvCnt=0;
+      const stepY=Math.max(2,(h/120)|0);
+      const stepX=Math.max(2,(w/160)|0);
+      for(let y=0;y<h;y+=stepY){
+        const row=y*w;
+        for(let x=0;x<w-1;x+=stepX){
+          lvSum+=Math.abs(luma[row+x]-luma[row+x+1]);
+          lvCnt++;
+        }
+      }
+      const lineVisibility=lvSum/Math.max(1,lvCnt);
+
+      let spSum=0,spCnt=0;
+      const stride=Math.max(10,(Math.min(w,h)/45)|0);
+      const half=2;
+      for(let y=half;y<h-half;y+=stride){
+        for(let x=half;x<w-half;x+=stride){
+          let m=0,m2=0,c=0;
+          for(let yy=-half;yy<=half;yy++){
+            const row=(y+yy)*w;
+            for(let xx=-half;xx<=half;xx++){
+              const v=luma[row+(x+xx)];
+              m+=v; m2+=v*v; c++;
+            }
+          }
+          m/=c; m2/=c;
+          const varr=Math.max(0,m2-m*m);
+          spSum+=Math.sqrt(varr);
+          spCnt++;
+        }
+      }
+      const speckleIndex=spSum/Math.max(1,spCnt);
+
+      return {
+        meanLuma:mean,p10,p90,contrast,
+        clippedWhite:clippedW/n, clippedBlack:clippedB/n,
+        speckleIndex, deepDrop, lineVisibility
+      };
+    }
+
+    function targetForPreset(presetName){
+      if(presetName==="Thyroid") return {cMin:0.40,cMax:0.55};
+      return {cMin:0.35,cMax:0.60};
+    }
+
+    function scoreQuality(m,presetName){
+      const t=targetForPreset(presetName);
+      let score=100;
+
+      if(m.meanLuma<0.40) score-=(0.40-m.meanLuma)*120;
+      if(m.meanLuma>0.60) score-=(m.meanLuma-0.60)*120;
+
+      if(m.contrast<t.cMin) score-=(t.cMin-m.contrast)*150;
+      if(m.contrast>t.cMax) score-=(m.contrast-t.cMax)*120;
+
+      if(m.clippedWhite>0.015) score-=(m.clippedWhite-0.015)*6000;
+      if(m.clippedBlack>0.025) score-=(m.clippedBlack-0.025)*5000;
+
+      if(m.deepDrop<0.55) score-=(0.55-m.deepDrop)*180;
+      if(m.deepDrop>0.85) score-=(m.deepDrop-0.85)*80;
+
+      if(m.lineVisibility<0.030) score-=(0.030-m.lineVisibility)*2200;
+
+      const baseline=0.06+(m.meanLuma*0.03);
+      if(m.speckleIndex>1.35*baseline){
+        const ratio=m.speckleIndex/Math.max(1e-6,baseline);
+        score-=(ratio-1.35)*24;
+      }
+      return Math.round(U.clamp(score,0,100));
+    }
+
+    function verdict(score){
+      if(score>=86) return "Bardzo dobry obraz.";
+      if(score>=70) return "Dobry obraz — drobne korekty poprawią czytelność.";
+      if(score>=50) return "Do poprawy — warto przestawić parametry.";
+      return "Słaby obraz — zacznij od penetracji (Depth/Frequency).";
+    }
+
+    function buildChecklist(m, presetName){
+      const t=targetForPreset(presetName);
+      const items=[];
+      const meanOk=(m.meanLuma>=0.40 && m.meanLuma<=0.60);
+      items.push({key:"Jasność", status: meanOk?"ok":"warn", text: meanOk?"OK":"Ustaw Gain/TGC, aby nie było za ciemno/jasno."});
+
+      const cOk=(m.contrast>=t.cMin && m.contrast<=t.cMax);
+      items.push({key:"Kontrast", status: cOk?"ok":"warn", text: cOk?"OK":"Skoryguj DR (mniej/więcej półtonów)."});
+      const clipOk=(m.clippedWhite<0.015 && m.clippedBlack<0.025);
+      items.push({key:"Przepalenia / cienie", status: clipOk?"ok":"bad", text: clipOk?"OK":"Zmniejsz Gain lub podnieś DR, jeśli detale znikają."});
+
+      const penOk=(m.deepDrop>=0.55);
+      items.push({key:"Penetracja", status: penOk?"ok":(m.deepDrop<0.45?"bad":"warn"), text: penOk?"OK":"Zmień Frequency / Depth lub doświetl dół TGC."});
+
+      const sharpOk=(m.lineVisibility>=0.030);
+      items.push({key:"Ostrość", status: sharpOk?"ok":"warn", text: sharpOk?"OK":"Jeśli rozmyte: Frequency ↑ lub Depth ↓ (zależnie od penetracji)."});
+      return items;
+    }
+
+    function maxTgcDiff(tgc){
+      let max=0;
+      for(let i=0;i<tgc.length-1;i++) max=Math.max(max,Math.abs(tgc[i+1]-tgc[i]));
+      return max;
+    }
+
+    function buildRecommendations(state,m){
+      const p=state.params;
+      const t=targetForPreset(state.presetName);
+
+      const recs=[];
+      const push=(prio,title,reason,action)=>{
+        if(recs.length>=5) return;
+        recs.push({prio,title,reason,action});
+      };
+
+      const roiDepth = U.clamp((state.roi.y + state.roi.h*0.5) * p.depthCm, 0.3, p.depthCm);
+      const focusDelta = Math.abs(p.focusCm - roiDepth);
+      if(focusDelta > 0.7){
+        push("A",
+          `FOCUS: ustaw na ~${roiDepth.toFixed(1)} cm`,
+          "Najostrzej jest w okolicy ogniska — ustaw focus na interesującej strukturze (środek ROI).",
+          {type:"setParam", key:"focusCm", value:roiDepth}
+        );
+      }
+
+      const tf = U.clamp(p.focusCm / Math.max(0.1, p.depthCm), 0, 1);
+      const freqFromFocus = U.clamp(U.lerp(15.0, 5.0, tf), 2, 15);
+      if(Math.abs(p.freqMHz - freqFromFocus) > 2.0){
+        push("B",
+          `Frequency wg FOCUS: celuj w ~${freqFromFocus.toFixed(1)} MHz`,
+          "Płycej (wyżej na obrazie) warto iść w MHz w górę (ostrość). Głębiej — w dół (penetracja).",
+          {type:"setParam", key:"freqMHz", value:freqFromFocus}
+        );
+      }
+
+      const tooDark = m.meanLuma < 0.40;
+      const tooBright = m.meanLuma > 0.60;
+      const poorPen = m.deepDrop < 0.55;
+      const clipHi  = m.clippedWhite > 0.015;
+      const lowC    = m.contrast < t.cMin;
+      const highC   = m.contrast > t.cMax;
+      const blurry  = m.lineVisibility < 0.030;
+
+      const baseline=0.06+(m.meanLuma*0.03);
+      const tooNoisy = m.speckleIndex > 1.35*baseline;
+
+      if(poorPen){
+        const dFreq = -U.clamp(1+Math.round((0.55-m.deepDrop)*6),1,3);
+        const minFreq = (p.depthCm<=6)?7:5;
+        const targetFreq = U.clamp(p.freqMHz + dFreq, minFreq, 15);
+        push("A",
+          `Penetracja: zmniejsz Frequency do ~${targetFreq.toFixed(1)} MHz`,
+          "Niższa częstotliwość lepiej dociera w głąb (mniej przyciemnienia na dole).",
+          {type:"setParam", key:"freqMHz", value:targetFreq}
+        );
+
+        const dDepth = -U.clamp(1+Math.round((0.55-m.deepDrop)*4),1,3);
+        const targetDepth = U.clamp(p.depthCm + dDepth, 2, 30);
+        push("A",
+          `Zakres: zmniejsz Depth do ~${targetDepth.toFixed(1)} cm`,
+          "Jeśli obraz ma być płytki (stopa/ścięgna), zbyt duża głębokość tylko pogarsza czytelność.",
+          {type:"setParam", key:"depthCm", value:targetDepth}
+        );
+      } else if(blurry){
+        const targetFreq = U.clamp(p.freqMHz + 2.0, 2, 15);
+        push("A",
+          `Ostrość: zwiększ Frequency do ~${targetFreq.toFixed(1)} MHz`,
+          "Przy dobrej penetracji wyższa częstotliwość daje ostrzejszy obraz.",
+          {type:"setParam", key:"freqMHz", value:targetFreq}
+        );
+      }
+
+      if((tooDark && !clipHi)){
+        const targetGain = U.clamp(p.gain + 8, 0, 100);
+        push("B",
+          `Jasność: zwiększ Gain do ~${Math.round(targetGain)}%`,
+          "Obraz jest zbyt ciemny — doświetl globalnie Gain.",
+          {type:"setParam", key:"gain", value:targetGain}
+        );
+      }
+      if(tooBright || clipHi){
+        const targetGain = U.clamp(p.gain - 8, 0, 100);
+        push("B",
+          `Usuń przepalenia: zmniejsz Gain do ~${Math.round(targetGain)}%`,
+          "Przepalone jasne miejsca zabierają szczegóły w strukturach.",
+          {type:"setParam", key:"gain", value:targetGain}
+        );
+      }
+
+      if(lowC){
+        const targetDR = U.clamp(p.drDb - 10, 20, 120);
+        push("B",
+          `Kontrast: zmniejsz DR do ~${Math.round(targetDR)} dB`,
+          "Mniej DR = więcej kontrastu (mniej “wyprania”).",
+          {type:"setParam", key:"drDb", value:targetDR}
+        );
+      } else if(highC){
+        const targetDR = U.clamp(p.drDb + 10, 20, 120);
+        push("B",
+          `Kontrast: zwiększ DR do ~${Math.round(targetDR)} dB`,
+          "Więcej DR = łagodniejsze przejścia (więcej półtonów).",
+          {type:"setParam", key:"drDb", value:targetDR}
+        );
+      }
+
+      if(poorPen){
+        push("C",
+          "Doświetl dół: podbij TGC 6–8",
+          "Głębia jest przyciemniona — TGC pozwala doświetlić dół bez przepalania góry.",
+          {type:"tgcBoostBottom", value:{t6:2,t7:3,t8:4}}
+        );
+      }
+      if(tooBright){
+        push("C",
+          "Jeśli powierzchnia za jasna: przygaś TGC 1–3",
+          "Zbyt jasna góra utrudnia ocenę struktur płytkich.",
+          {type:"tgcDimTop", value:{t1:2,t2:2,t3:1}}
+        );
+      }
+      if(maxTgcDiff(state.tgc)>6){
+        push("C",
+          "Wygładź TGC (usuń skoki)",
+          "Duże skoki TGC dają pasy jasności — wygładzenie poprawia jednorodność.",
+          {type:"tgcSmooth"}
+        );
+      }
+
+      if(tooNoisy && p.fr>45){
+        const targetFR = U.clamp(p.fr - 8, 10, 60);
+        push("D",
+          `Stabilność: zmniejsz FR do ~${Math.round(targetFR)} fps`,
+          "Jeśli obraz jest “nerwowy/ziarnisty”, mniejszy FR pomaga go uspokoić.",
+          {type:"setParam", key:"fr", value:targetFR}
+        );
+      }
+
+      if(p.cfOn && p.cfBox>60){
+        const targetBox = U.clamp(p.cfBox - 20, 0, 100);
+        push("E",
+          `CF szybciej: zmniejsz CF box do ~${Math.round(targetBox)}%`,
+          "Mniejsze ROI = lepsza płynność i czytelniejszy przepływ.",
+          {type:"setParam", key:"cfBox", value:targetBox}
+        );
+      } else if(p.cfOn && p.fr<20){
+        const targetFR = U.clamp(p.fr + 10, 10, 60);
+        push("E",
+          `CF płynniej: zwiększ FR do ~${Math.round(targetFR)} fps`,
+          "Color Flow potrzebuje zapasu FPS (albo mniejszego boxa).",
+          {type:"setParam", key:"fr", value:targetFR}
+        );
+      } else if(p.powerOn){
+        if(p.cfBox<20 || p.cfBox>40){
+          const targetBox=30;
+          push("E",
+            `Power czytelniej: ustaw box na ~${targetBox}%`,
+            "Power najlepiej działa przy ROI 20–40%.",
+            {type:"setParam", key:"cfBox", value:targetBox}
+          );
+        }
+      }
+
+      if(recs.length===0){
+        push("B","Utrzymaj ustawienia","Obraz mieści się w celach jakości — możesz dopracować Gain/TGC pod anatomię.",{type:"noop"});
+      }
+
+      return recs.slice(0,5);
+    }
+
+    function analyze(state,m){
+      const score=scoreQuality(m,state.presetName);
+      const headerLines=[
+        verdict(score),
+        `FOCUS: ${state.params.focusCm.toFixed(1)} cm • zasada: płycej ⇒ Frequency ↑, głębiej ⇒ Frequency ↓`,
+        "Najpierw ustaw penetrację (Depth/Frequency), potem jasność i kontrast (Gain/DR), na końcu dopracuj TGC.",
+        "Kliknij „Zastosuj” przy rekomendacji — ustawienia zmienią się automatycznie."
+      ];
+      const mode = state.params.powerOn ? "POWER" : (state.params.cfOn ? "CF" : "B-MODE");
+      return {
+        score,
+        mode,
+        headerText: headerLines.join("\n"),
+        checklist: buildChecklist(m,state.presetName),
+        recs: buildRecommendations(state,m)
+      };
+    }
+
+    window.Assistant={computeMetrics,analyze};
+  })();
+  </script>
+
+  <script>
+  // app.js (inline)
+  (function(){
+    "use strict";
+    const U=window.Utils;
+
+    const PRESETS={
+      MSK:{name:"MSK",gain:52,drDb:55,fr:35,freqMHz:10.0,depthCm:4.5,cfBox:25,focusCm:2.0,cfOn:false,powerOn:false,tgc:[2,2,1,0,0,-1,-2,-3]},
+      Superficial:{name:"Superficial",gain:48,drDb:50,fr:40,freqMHz:13.0,depthCm:2.5,cfBox:20,focusCm:1.2,cfOn:false,powerOn:false,tgc:[1,1,0,0,-1,-2,-3,-4]},
+      Thyroid:{name:"Thyroid",gain:50,drDb:65,fr:30,freqMHz:12.0,depthCm:5.0,cfBox:30,focusCm:2.4,cfOn:true,powerOn:false,tgc:[1,1,1,0,0,0,-1,-2]}
+    };
+
+    const el={};
+    const q=(id)=>document.getElementById(id);
+
+    const state={
+      presetName:"MSK",
+      params:{gain:52,drDb:55,fr:35,freqMHz:10.0,depthCm:4.5,cfBox:25,focusCm:2.0,cfOn:false,powerOn:false},
+      tgc:PRESETS.MSK.tgc.slice(),
+      roi:{x:0.35,y:0.30,w:0.30,h:0.24},
+      gate:{cx:0.50,cy:0.50,rx:0.34,ry:0.26},
+
+      focusAnim:2.0,
+      focusDragging:false,
+
+      displayCanvas:null,dpr:1,mainCtx:null,
+
+      simCanvas:document.createElement("canvas"),
+      simCtx:null,
+      simW:960,simH:540,
+      simLuma:null,simPrev:null,simTmp:null,simImageData:null,
+      overlayCanvas:document.createElement("canvas"),
+      overlayCtx:null,
+
+      noiseA:null,noiseB:null,noiseW:256,noiseH:256,
+
+      lastRAF:0,lastSim:0,fpsSmoothed:0,frameIndex:0,
+      lastMetricsAt:0,
+      metrics:{meanLuma:0,p10:0,p90:0,contrast:0,clippedWhite:0,clippedBlack:0,speckleIndex:0,deepDrop:0,lineVisibility:0},
+
+      uiRecs:[],
+      _logoImg:null
+    };
+
+    function freqTargetForFocus(focusCm, depthCm){
+      const t = U.clamp(focusCm / Math.max(0.1, depthCm), 0, 1);
+      return U.lerp(15.0, 5.0, t);
+    }
+
+    function buildTgcUI(){
+      const grid=el.tgcGrid; grid.innerHTML="";
+      for(let i=0;i<8;i++){
+        const item=document.createElement("div");
+        item.className="group";
+        item.style.marginBottom="10px";
+        item.innerHTML=`
+          <div class="groupTitle" style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px">
+            <span>TGC ${i+1}</span>
+            <span style="font-variant-numeric:tabular-nums;font-weight:1100" id="tgcVal${i}">—</span>
+          </div>
+          <input id="tgc${i}" class="range" type="range" min="-10" max="10" step="1" />
+        `;
+        grid.appendChild(item);
+      }
+    }
+
+    function setSlider(id,v){ q(id).value=String(v); }
+
+    function bindUI(){
+      el.usgCanvas=q("usgCanvas");
+      el.tgcGrid=q("tgcGrid");
+      el.modePill=q("modePill");
+      el.imgPill=q("imgPill");
+      el.roiPill=q("roiPill");
+
+      el.sGain=q("sGain"); el.vGain=q("vGain");
+      el.sDR=q("sDR"); el.vDR=q("vDR");
+      el.sFR=q("sFR"); el.vFR=q("vFR");
+      el.sFreq=q("sFreq"); el.vFreq=q("vFreq");
+      el.sDepth=q("sDepth"); el.vDepth=q("vDepth");
+      el.sCFBox=q("sCFBox"); el.vCFBox=q("vCFBox");
+
+      el.sFocus=q("sFocus");
+      el.vFocus=q("vFocus");
+
+      el.tCF=q("tCF");
+      el.tPower=q("tPower");
+
+      el.metricsGrid=q("metricsGrid");
+
+      el.presetMSK=q("presetMSK");
+      el.presetSuperficial=q("presetSuperficial");
+      el.presetThyroid=q("presetThyroid");
+      el.btnReset=q("btnReset");
+
+      el.scoreValue=q("scoreValue");
+      el.scoreSub=q("scoreSub");
+      el.assistantText=q("assistantText");
+      el.checklist=q("checklist");
+      el.recs=q("recs");
+      el.assistantFoot=q("assistantFoot");
+
+      el.statFps=q("statFps");
+      el.statRes=q("statRes");
+      el.statQuality=q("statQuality");
+      el.statMode=q("statMode");
+    }
+
+    function updateUIValues(){
+      el.vGain.textContent=`${state.params.gain.toFixed(0)} %`;
+      el.vDR.textContent=`${state.params.drDb.toFixed(0)} dB`;
+      el.vFR.textContent=`${state.params.fr.toFixed(0)} fps`;
+      el.vFreq.textContent=`${state.params.freqMHz.toFixed(1)} MHz`;
+      el.vDepth.textContent=`${state.params.depthCm.toFixed(1)} cm`;
+      el.vCFBox.textContent=`${state.params.cfBox.toFixed(0)} %`;
+
+      if(el.sFocus){
+        const maxF = Math.max(0.3, state.params.depthCm);
+        el.sFocus.min = "0.3";
+        el.sFocus.max = String(maxF.toFixed(1));
+        state.params.focusCm = U.clamp(state.params.focusCm, 0.3, maxF);
+        state.focusAnim = U.clamp(state.focusAnim, 0.3, maxF);
+        if(el.vFocus) el.vFocus.textContent = `${state.params.focusCm.toFixed(1)} cm`;
+      }
+
+      for(let i=0;i<8;i++){
+        const v=state.tgc[i];
+        q(`tgcVal${i}`).textContent=(v>=0?"+":"")+v;
+        q(`tgc${i}`).value=String(v);
+      }
+
+      el.tCF.checked=!!state.params.cfOn;
+      el.tPower.checked=!!state.params.powerOn;
+
+      el.modePill.textContent = state.params.powerOn ? "POWER" : (state.params.cfOn ? "CF" : "B-mode");
+      el.imgPill.textContent="Phantom";
+      el.roiPill.textContent=(state.params.cfOn||state.params.powerOn)?"ROI ACTIVE":"ROI";
+    }
+
+    function buildMetricsUI(){
+      const m=state.metrics;
+      const rows=[
+        ["meanLuma", m.meanLuma.toFixed(3)],
+        ["contrast", m.contrast.toFixed(3)],
+        ["clippedWhite", (m.clippedWhite*100).toFixed(2)+"%"],
+        ["clippedBlack", (m.clippedBlack*100).toFixed(2)+"%"],
+        ["deepDrop", m.deepDrop.toFixed(3)],
+        ["lineVisibility", m.lineVisibility.toFixed(4)],
+        ["speckleIndex", m.speckleIndex.toFixed(4)],
+        ["p10", m.p10.toFixed(3)],
+        ["p90", m.p90.toFixed(3)]
+      ];
+      el.metricsGrid.innerHTML=rows.map(([k,v])=>`
+        <div class="metric"><div class="k">${k}</div><div class="v">${v}</div></div>
+      `).join("");
+    }
+
+function renderAssistant(){
+  const rep=window.Assistant.analyze(state,state.metrics);
+
+  // Cache DOM updates to avoid repaint/flicker
+  const c = state._assistantCache || (state._assistantCache = {});
+
+  if(c.score !== rep.score){
+    el.scoreValue.textContent=String(rep.score);
+    c.score = rep.score;
+  }
+
+  const scoreSub = `Preset: ${state.presetName} • Tryb: ${rep.mode}`;
+  if(c.scoreSub !== scoreSub){
+    el.scoreSub.textContent=scoreSub;
+    c.scoreSub = scoreSub;
+  }
+
+  if(c.headerText !== rep.headerText){
+    el.assistantText.textContent=rep.headerText;
+    c.headerText = rep.headerText;
+  }
+
+  const checklistHTML = rep.checklist.map(it=>{
+    const cls=it.status;
+    const icon=(cls==="ok")?"OK":(cls==="warn")?"UWAGA":"BŁĄD";
+    return `<span class="badge ${cls}">${icon}: ${it.key}</span><div class="miniNote" style="margin:0 0 8px 2px">${it.text}</div>`;
+  }).join("");
+
+  if(c.checklistHTML !== checklistHTML){
+    el.checklist.innerHTML = checklistHTML;
+    c.checklistHTML = checklistHTML;
+  }
+
+  state.uiRecs = rep.recs || [];
+
+  let recsHTML = "";
+  if(state.uiRecs.length===0){
+    recsHTML = `<div class="miniNote">Brak zaleceń.</div>`;
+  }else{
+    recsHTML = state.uiRecs.map((r,idx)=>`
+      <div class="recItem">
+        <div class="recLeft">
+          <div class="recHead">
+            <span class="prio ${r.prio}">PRIORYTET ${r.prio}</span>
+            ${r.title}
+          </div>
+          <div class="recBody">${r.reason}</div>
+        </div>
+        <button class="applyBtn" data-i="${idx}" ${r.action && r.action.type!=="noop" ? "" : "disabled"}>Zastosuj</button>
+      </div>
+    `).join("");
+  }
+
+  if(c.recsHTML !== recsHTML){
+    el.recs.innerHTML = recsHTML;
+    c.recsHTML = recsHTML;
+  }
+
+  const footText = "Tip: badanie płytkie (stopa/ścięgna) — zwykle Depth ↓, Frequency ↑; TGC użyj do dopracowania dołu.";
+  if(c.footText !== footText){
+    el.assistantFoot.textContent = footText;
+    c.footText = footText;
+  }
+}
+
+    function setRoiFromBoxPercent(percent){
+      const t=U.clamp(percent/100,0,1);
+      const side=U.lerp(0.15,0.75,t);
+      const w=side;
+      const h=U.clamp(side*0.80,0.12,0.75);
+
+      const cx=state.roi.x+state.roi.w*0.5;
+      const cy=state.roi.y+state.roi.h*0.5;
+
+      state.roi.w=w; state.roi.h=h;
+      state.roi.x=U.clamp(cx-w*0.5,0,1-w);
+      state.roi.y=U.clamp(cy-h*0.5,0,1-h);
+    }
+
+    function boxPercentFromRoi(){
+      const side=state.roi.w;
+      const t=U.clamp((side-0.15)/(0.75-0.15),0,1);
+      return Math.round(t*100);
+    }
+
+    function applyAssistantAction(action){
+      if(!action || action.type==="noop") return;
+
+      if(action.type==="setParam"){
+        const key=action.key;
+        const v=Number(action.value);
+        if(key in state.params){
+          state.params[key]=v;
+          if(key==="gain") setSlider("sGain",v);
+          if(key==="drDb") setSlider("sDR",v);
+          if(key==="fr") setSlider("sFR",v);
+          if(key==="freqMHz") setSlider("sFreq",v);
+          if(key==="depthCm") setSlider("sDepth",v);
+
+          if(key==="focusCm"){
+            setSlider("sFocus",v);
+            state.focusAnim = v;
+
+            const targetF = freqTargetForFocus(state.params.focusCm, state.params.depthCm);
+            const newFreq = U.clamp(state.params.freqMHz * 0.75 + targetF * 0.25, 2, 15);
+            state.params.freqMHz = newFreq;
+            setSlider("sFreq", newFreq);
+          }
+
+          if(key==="cfBox"){
+            setSlider("sCFBox",v);
+            setRoiFromBoxPercent(v);
+          }
+          updateUIValues();
+        }
+      }
+
+      if(action.type==="tgcBoostBottom"){
+        const a=action.value||{t6:2,t7:3,t8:4};
+        state.tgc[5]=U.clamp(state.tgc[5]+(a.t6||0),-10,10);
+        state.tgc[6]=U.clamp(state.tgc[6]+(a.t7||0),-10,10);
+        state.tgc[7]=U.clamp(state.tgc[7]+(a.t8||0),-10,10);
+        updateUIValues();
+      }
+
+      if(action.type==="tgcDimTop"){
+        const a=action.value||{t1:2,t2:2,t3:1};
+        state.tgc[0]=U.clamp(state.tgc[0]-(a.t1||0),-10,10);
+        state.tgc[1]=U.clamp(state.tgc[1]-(a.t2||0),-10,10);
+        state.tgc[2]=U.clamp(state.tgc[2]-(a.t3||0),-10,10);
+        updateUIValues();
+      }
+
+      if(action.type==="tgcSmooth"){
+        const tgc=state.tgc.slice();
+        const out=tgc.slice();
+        for(let i=0;i<8;i++){
+          const left=tgc[Math.max(0,i-1)];
+          const mid=tgc[i];
+          const right=tgc[Math.min(7,i+1)];
+          out[i]=U.clamp(Math.round(left*0.25 + mid*0.5 + right*0.25), -10, 10);
+        }
+        state.tgc=out;
+        updateUIValues();
+      }
+
+      renderAssistant();
+    }
+
+    const pointer={active:false,mode:null,handle:null,startX:0,startY:0,startRoi:null,startGate:null};
+
+    function toCanvasPx(ev){
+      const rect=state.displayCanvas.getBoundingClientRect();
+      const x=(ev.clientX-rect.left)*state.dpr;
+      const y=(ev.clientY-rect.top)*state.dpr;
+      return {x,y};
+    }
+
+    function computeViewLayout(){
+      const c=state.displayCanvas;
+      const W=c.width,H=c.height;
+      const scaleW=Math.round(Math.max(62,Math.min(90,W*0.10)));
+      return {W,H,scaleW,imgX:0,imgY:0,imgW:W-scaleW,imgH:H};
+    }
+
+    function roiRectPx(view){
+      return {
+        x:view.imgX + state.roi.x*view.imgW,
+        y:view.imgY + state.roi.y*view.imgH,
+        w:state.roi.w*view.imgW,
+        h:state.roi.h*view.imgH
+      };
+    }
+
+    function gateEllipsePx(r){
+      return {
+        cx:r.x + state.gate.cx*r.w,
+        cy:r.y + state.gate.cy*r.h,
+        rx:state.gate.rx*r.w,
+        ry:state.gate.ry*r.h
+      };
+    }
+
+    function hitHandle(px,py,r){
+      const hs=14*state.dpr;
+      const corners={tl:{x:r.x,y:r.y},tr:{x:r.x+r.w,y:r.y},bl:{x:r.x,y:r.y+r.h},br:{x:r.x+r.w,y:r.y+r.h}};
+      for(const k of Object.keys(corners)){
+        const c=corners[k];
+        if(Math.abs(px-c.x)<=hs && Math.abs(py-c.y)<=hs) return k;
+      }
+      return null;
+    }
+
+    function pointInRect(px,py,r){ return px>=r.x && px<=r.x+r.w && py>=r.y && py<=r.y+r.h; }
+    function pointInEllipse(px,py,e){
+      const dx=(px-e.cx)/Math.max(1e-6,e.rx);
+      const dy=(py-e.cy)/Math.max(1e-6,e.ry);
+      return (dx*dx+dy*dy)<=1.0;
+    }
+
+    function bindCanvasPointers(){
+      const c=state.displayCanvas;
+
+      c.addEventListener("pointerdown",(ev)=>{
+        const view=computeViewLayout();
+        const {x,y}=toCanvasPx(ev);
+
+        const r=roiRectPx(view);
+        const h=hitHandle(x,y,r);
+
+        if(state.params.powerOn){
+          const e=gateEllipsePx(r);
+          if(pointInEllipse(x,y,e)){
+            pointer.active=true; pointer.mode="drag-gate";
+            pointer.startX=x; pointer.startY=y;
+            pointer.startGate={...state.gate};
+            c.setPointerCapture(ev.pointerId);
+            return;
+          }
+        }
+
+        if(h){
+          pointer.active=true; pointer.mode="resize-roi"; pointer.handle=h;
+          pointer.startX=x; pointer.startY=y; pointer.startRoi={...state.roi};
+          c.setPointerCapture(ev.pointerId);
+          return;
+        }
+
+        if(pointInRect(x,y,r)){
+          pointer.active=true; pointer.mode="drag-roi";
+          pointer.startX=x; pointer.startY=y; pointer.startRoi={...state.roi};
+          c.setPointerCapture(ev.pointerId);
+        }
+      });
+
+      c.addEventListener("pointermove",(ev)=>{
+        if(!pointer.active) return;
+        const view=computeViewLayout();
+        const {x,y}=toCanvasPx(ev);
+        const dx=x-pointer.startX;
+        const dy=y-pointer.startY;
+
+        if(pointer.mode==="drag-roi"){
+          const nx=pointer.startRoi.x + dx/view.imgW;
+          const ny=pointer.startRoi.y + dy/view.imgH;
+          state.roi.x=U.clamp(nx,0,1-state.roi.w);
+          state.roi.y=U.clamp(ny,0,1-state.roi.h);
+        }
+
+        if(pointer.mode==="resize-roi"){
+          const s=pointer.startRoi;
+          let x0=s.x,y0=s.y,x1=s.x+s.w,y1=s.y+s.h;
+          const ddx=dx/view.imgW;
+          const ddy=dy/view.imgH;
+          if(pointer.handle==="tl"){x0+=ddx; y0+=ddy;}
+          if(pointer.handle==="tr"){x1+=ddx; y0+=ddy;}
+          if(pointer.handle==="bl"){x0+=ddx; y1+=ddy;}
+          if(pointer.handle==="br"){x1+=ddx; y1+=ddy;}
+
+          const minW=0.10,minH=0.08;
+          let nx0=Math.min(x0,x1), nx1=Math.max(x0,x1);
+          let ny0=Math.min(y0,y1), ny1=Math.max(y0,y1);
+
+          if(nx1-nx0<minW){const mid=(nx0+nx1)/2; nx0=mid-minW/2; nx1=mid+minW/2;}
+          if(ny1-ny0<minH){const mid=(ny0+ny1)/2; ny0=mid-minH/2; ny1=mid+minH/2;}
+
+          nx0=U.clamp(nx0,0,1-minW);
+          ny0=U.clamp(ny0,0,1-minH);
+          nx1=U.clamp(nx1,nx0+minW,1);
+          ny1=U.clamp(ny1,ny0+minH,1);
+
+          state.roi.x=nx0; state.roi.y=ny0; state.roi.w=nx1-nx0; state.roi.h=ny1-ny0;
+
+          const p=boxPercentFromRoi();
+          state.params.cfBox=p;
+          el.sCFBox.value=String(p);
+          el.vCFBox.textContent=`${p}%`;
+        }
+
+        if(pointer.mode==="drag-gate"){
+          const r=roiRectPx(view);
+          const cx=pointer.startGate.cx + dx/Math.max(1e-6,r.w);
+          const cy=pointer.startGate.cy + dy/Math.max(1e-6,r.h);
+          state.gate.cx=U.clamp(cx,0.12,0.88);
+          state.gate.cy=U.clamp(cy,0.12,0.88);
+        }
+      });
+
+      function endPointer(){
+        if(pointer.active){
+          pointer.active=false; pointer.mode=null; pointer.handle=null; pointer.startRoi=null; pointer.startGate=null;
+        }
+      }
+      c.addEventListener("pointerup", endPointer);
+      c.addEventListener("pointercancel", endPointer);
+    }
+
+    function ensureSimCtx(){
+      if(!state.simCtx) state.simCtx=state.simCanvas.getContext("2d",{willReadFrequently:true});
+      if(!state.overlayCtx) state.overlayCtx=state.overlayCanvas.getContext("2d",{willReadFrequently:true});
+    }
+
+    function chooseQuality(){
+      const on=state.params.cfOn || state.params.powerOn;
+      const area=state.roi.w*state.roi.h;
+      const fr=state.params.fr;
+
+      let cost=1.0;
+      if(on) cost += 1.35 * U.clamp(area*2.2,0,1.4);
+      if(fr>45) cost += 0.25;
+
+      let scale=1.0,label="HIGH";
+      if(cost>2.05){scale=0.62; label="LOW";}
+      else if(cost>1.55){scale=0.78; label="MED";}
+      return {scale,label};
+    }
+
+    function ensureSimBuffers(){
+      ensureSimCtx();
+      const qual=chooseQuality();
+      const baseW=1024, baseH=576;
+      const w=Math.max(420, Math.round(baseW*qual.scale));
+      const h=Math.max(300, Math.round(baseH*qual.scale));
+
+      if(w!==state.simW || h!==state.simH){
+        state.simW=w; state.simH=h;
+        state.simCanvas.width=w; state.simCanvas.height=h;
+        state.overlayCanvas.width=w; state.overlayCanvas.height=h;
+        state.simLuma=new Float32Array(w*h);
+        state.simPrev=new Float32Array(w*h);
+        state.simTmp=new Float32Array(w*h);
+        state.simImageData=state.simCtx.createImageData(w,h);
+      }
+      return qual;
+    }
+
+    function buildNoiseTextures(){
+      state.noiseA=new Float32Array(state.noiseW*state.noiseH);
+      state.noiseB=new Float32Array(state.noiseW*state.noiseH);
+      for(let y=0;y<state.noiseH;y++){
+        for(let x=0;x<state.noiseH;x++){
+          const i=y*state.noiseW+x;
+          state.noiseA[i]=U.hash01(x,y,12345);
+          state.noiseB[i]=U.hash01(x,y,67890);
+        }
+      }
+    }
+
+    function sampleNoise(tex,w,h,u,v){
+      let x=((u%1+1)%1)*(w-1);
+      let y=((v%1+1)%1)*(h-1);
+      const x0=x|0,y0=y|0;
+      const x1=Math.min(w-1,x0+1);
+      const y1=Math.min(h-1,y0+1);
+      const tx=x-x0, ty=y-y0;
+      const i00=y0*w+x0, i10=y0*w+x1, i01=y1*w+x0, i11=y1*w+x1;
+      const a=tex[i00]*(1-tx)+tex[i10]*tx;
+      const b=tex[i01]*(1-tx)+tex[i11]*tx;
+      return a*(1-ty)+b*ty;
+    }
+
+    function tgcAtDepth(zCm){
+      const d=Math.max(0.1,state.params.depthCm);
+      const t=U.clamp(zCm/d,0,1);
+      const pos=t*7;
+      const i0=Math.floor(pos);
+      const i1=Math.min(7,i0+1);
+      const f=pos-i0;
+      const v=U.lerp(state.tgc[i0],state.tgc[i1],f);
+      const mul=Math.pow(10,(v*0.55)/20);
+      return mul;
+    }
+
+    function phantomReflectivity(xNorm,zCm){
+      let r=0.10;
+      r+=0.04*Math.sin((zCm*2*Math.PI)/1.4);
+      r+=0.03*Math.cos((zCm*2*Math.PI)/2.6);
+      r+=0.55*Math.exp(-Math.pow((zCm-0.18)/0.05,2));
+      r+=0.18*Math.exp(-Math.pow((zCm-0.75)/0.06,2));
+      r+=0.12*Math.exp(-Math.pow((zCm-1.35)/0.07,2));
+      const tendonZ=1.8+0.18*Math.sin(xNorm*10.0);
+      r+=0.22*Math.exp(-Math.pow((zCm-tendonZ)/0.10,2));
+
+      const bx=0.58,bz=2.55,br=0.55;
+      const dx=(xNorm-bx)*2.0;
+      const dz=(zCm-bz);
+      const dist=Math.sqrt(dx*dx+dz*dz);
+      const bone=Math.exp(-Math.pow((dist-br)/0.07,2));
+      r+=0.85*bone;
+
+      const inBoneColumn=Math.abs(xNorm-bx)<0.10;
+      if(inBoneColumn && zCm>bz){
+        const shadow=U.smoothstep(bz,bz+1.8,zCm);
+        r*=(1.0-0.78*shadow);
+      }
+
+      const vign=1.0-0.22*Math.pow(Math.abs(xNorm-0.5)*2.0,1.6);
+      r*=vign;
+      return U.clamp(r,0,1);
+    }
+
+    function computeBModeFrame(frameIndex){
+      const w=state.simW,h=state.simH;
+      const depthCm=state.params.depthCm;
+      const gain=state.params.gain/100;
+
+      const focusCm = U.clamp(state.params.focusCm, 0.3, Math.max(0.3, depthCm));
+
+      const userFreq = state.params.freqMHz;
+      const targetFreq = freqTargetForFocus(focusCm, depthCm);
+      const freqEff = U.clamp(userFreq*0.70 + targetFreq*0.30, 2, 15);
+
+      const attenPerCm=0.06+0.012*freqEff;
+
+      const speckleAmp=
+        U.clamp(0.35+gain*0.65,0.30,1.0) *
+        U.clamp(1.10-(freqEff-2)/13*0.25,0.75,1.10);
+
+      const scanPeriod=U.lerp(6.0,3.0,U.clamp((freqEff-2)/13,0,1));
+
+      const blurBase=
+        U.lerp(2.4,0.35,U.clamp((freqEff-2)/13,0,1)) *
+        U.lerp(0.90,1.25,U.clamp((depthCm-2)/28,0,1));
+
+      const aLog=U.lerp(2.0,50.0,U.clamp((state.params.drDb-20)/100,0,1));
+      const contrastFactor=U.lerp(1.35,0.85,U.clamp((state.params.drDb-20)/100,0,1));
+
+      const t=frameIndex*0.016;
+      const offU=t*0.17, offV=t*0.11;
+
+      for(let y=0;y<h;y++){
+        const zNorm=y/(h-1);
+        const zCm=zNorm*depthCm;
+
+        const att=Math.exp(-attenPerCm*zCm);
+        const tgc=tgcAtDepth(zCm);
+        const baseDepth=0.05+0.04*Math.exp(-zCm*0.7);
+        const scan=0.92+0.08*Math.sin((y/scanPeriod)+t*0.6);
+
+        for(let x=0;x<w;x++){
+          const xNorm=x/(w-1);
+
+          let refl=phantomReflectivity(xNorm,zCm);
+
+          const grainScale=U.lerp(0.65,1.25,U.clamp((freqEff-2)/13,0,1));
+          const nu=xNorm*grainScale+offU;
+          const nv=zNorm*grainScale+offV;
+          const n1=sampleNoise(state.noiseA,state.noiseW,state.noiseH,nu,nv);
+          const n2=sampleNoise(state.noiseB,state.noiseW,state.noiseH,nu*1.31,nv*1.19);
+          const n=(n1*0.55+n2*0.45);
+          const speck=1.0+(n-0.5)*speckleAmp;
+
+          const col=0.96+0.04*Math.sin((x/3.2)+t*0.4);
+
+          let s=(refl+baseDepth)*att*tgc*speck*scan*col;
+
+          const gMul=U.lerp(0.55,2.10,gain);
+          s*=gMul;
+          s=s/(s+0.35);
+
+          let out=Math.log(1+aLog*s)/Math.log(1+aLog);
+          out=U.clamp((out-0.5)*contrastFactor+0.5,0,1);
+
+          state.simLuma[y*w+x]=out;
+        }
+      }
+
+      const tmp = state.simTmp;
+      const focusSigmaCm = 0.30 + depthCm*0.05;
+      const denom = Math.max(0.20, focusSigmaCm*2.2);
+
+      for(let y=0;y<h;y++){
+        const zCm=(y/(h-1))*depthCm;
+        const dist=Math.abs(zCm-focusCm);
+        const tt=U.clamp(dist/denom,0,1);
+
+        const rNear = Math.max(0, Math.min(1, Math.round(blurBase*0.35)));
+        const rFar  = Math.max(rNear, Math.min(4, Math.round(blurBase*1.25 + 2)));
+        const r = Math.round(U.lerp(rNear, rFar, tt));
+
+        const row=y*w;
+
+        if(r<=0){
+          for(let x=0;x<w;x++) tmp[row+x]=state.simLuma[row+x];
+          continue;
+        }
+
+        for(let x=0;x<w;x++){
+          let sum=0, cnt=0;
+          const x0=Math.max(0, x-r);
+          const x1=Math.min(w-1, x+r);
+          for(let xx=x0; xx<=x1; xx++){
+            sum += state.simLuma[row+xx];
+            cnt++;
+          }
+          tmp[row+x]=sum/Math.max(1,cnt);
+        }
+      }
+      state.simLuma.set(tmp);
+
+      const alpha=U.clamp((state.params.fr/60)*0.65+0.15,0.15,0.85);
+      const n=w*h;
+      for(let i=0;i<n;i++){
+        const sm=state.simPrev[i]*(1-alpha)+state.simLuma[i]*alpha;
+        state.simPrev[i]=sm;
+        state.simLuma[i]=sm;
+      }
+    }
+
+    function renderOverlayToMain(mainCtx,view){
+      if(!(state.params.cfOn||state.params.powerOn)) return;
+
+      const w=state.simW,h=state.simH;
+      const rx0=Math.floor(state.roi.x*w);
+      const ry0=Math.floor(state.roi.y*h);
+      const rw=Math.max(1,Math.floor(state.roi.w*w));
+      const rh=Math.max(1,Math.floor(state.roi.h*h));
+
+      state.overlayCtx.clearRect(0,0,w,h);
+      const img=state.overlayCtx.createImageData(rw,rh);
+      const d=img.data;
+
+      const t=state.frameIndex*0.016;
+      const gate={cx:state.gate.cx*rw,cy:state.gate.cy*rh,rx:state.gate.rx*rw,ry:state.gate.ry*rh};
+
+      for(let y=0;y<rh;y++){
+        const yy=ry0+y;
+        const z=yy/Math.max(1,h-1);
+        for(let x=0;x<rw;x++){
+          const xx=rx0+x;
+          const u=xx/Math.max(1,w-1);
+
+          const f1=Math.sin(u*10.0+t*0.8)*Math.cos(z*7.5-t*0.6);
+          const f2=Math.sin((u+z)*14.0-t*0.9);
+          let flow=0.65*f1+0.35*f2;
+
+          const bm=state.simLuma[yy*w+xx];
+          const mag=U.clamp(Math.abs(flow)*(0.35+bm*1.20),0,1);
+
+          let a=0, rr=0,gg=0,bb=0;
+
+          if(state.params.powerOn){
+            const dx=(x-gate.cx)/Math.max(1e-6,gate.rx);
+            const dy=(y-gate.cy)/Math.max(1e-6,gate.ry);
+            const inside=(dx*dx+dy*dy)<=1.0;
+            if(inside){
+              const p=Math.pow(mag,1.25);
+              a=U.clamp(p*0.78,0,0.78);
+              rr=255; gg=Math.round(170+60*p); bb=0;
+            }
+          }else{
+            const dir=(flow>=0)?1:-1;
+            const p2=U.clamp(mag,0,1);
+            a=U.clamp(p2*0.70,0,0.70);
+            if(dir>0){ rr=255; gg=30; bb=20; }
+            else { rr=20; gg=130; bb=255; }
+          }
+
+          const i=(y*rw+x)*4;
+          d[i]=rr; d[i+1]=gg; d[i+2]=bb; d[i+3]=Math.round(a*255);
+        }
+      }
+
+      state.overlayCtx.putImageData(img,rx0,ry0);
+
+      mainCtx.save();
+      mainCtx.globalCompositeOperation="screen";
+      mainCtx.imageSmoothingEnabled=true;
+      mainCtx.drawImage(state.overlayCanvas,0,0,w,h,view.imgX,view.imgY,view.imgW,view.imgH);
+      mainCtx.restore();
+    }
+
+    function resizeDisplayCanvas(){
+      const c=state.displayCanvas;
+      const rect=c.getBoundingClientRect();
+      state.dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));
+      const w=Math.max(2,Math.round(rect.width*state.dpr));
+      const h=Math.max(2,Math.round(rect.height*state.dpr));
+      if(c.width!==w || c.height!==h){ c.width=w; c.height=h; }
+    }
+
+    function drawFocusMarker(ctx,view){
+      const {H,scaleW,imgW}=view;
+      const x0=imgW;
+      const depth=Math.max(0.1,state.params.depthCm);
+      const y=U.clamp(state.focusAnim/depth,0,1)*H;
+
+      ctx.save();
+      ctx.fillStyle="rgba(255,190,80,0.98)";
+      ctx.strokeStyle="rgba(0,0,0,0.55)";
+      ctx.lineWidth=Math.max(1,1*state.dpr);
+
+      const m=10*state.dpr;
+      ctx.beginPath();
+      ctx.moveTo(x0+2*state.dpr, y);
+      ctx.lineTo(x0+m, y-m*0.65);
+      ctx.lineTo(x0+m, y+m*0.65);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle="rgba(255,190,80,0.95)";
+      ctx.font=`${Math.round(12*state.dpr)}px system-ui`;
+      ctx.fillText("F", x0+scaleW-18*state.dpr, Math.min(H-6*state.dpr, y+4*state.dpr));
+
+      ctx.restore();
+    }
+
+    function drawDepthScale(ctx,view){
+      const {H,scaleW,imgW}=view;
+      const x0=imgW;
+
+      ctx.save();
+      ctx.fillStyle="rgba(0,0,0,0.74)";
+      ctx.fillRect(x0,0,scaleW,H);
+
+      const depth=state.params.depthCm;
+      const stepMinor=0.5;
+      const stepMajor=1.0;
+
+      ctx.strokeStyle="rgba(232,244,255,0.96)";
+      ctx.fillStyle="rgba(232,244,255,0.96)";
+      ctx.font=`${Math.round(13*state.dpr)}px system-ui`;
+
+      for(let z=0; z<=depth+1e-6; z+=stepMinor){
+        const y=(z/depth)*H;
+        const isMajor=Math.abs((z/stepMajor)-Math.round(z/stepMajor))<1e-6;
+
+        ctx.beginPath();
+        ctx.lineWidth=isMajor?Math.max(3,3*state.dpr):Math.max(2,2*state.dpr);
+        const len=isMajor?Math.round(scaleW*0.58):Math.round(scaleW*0.36);
+        ctx.moveTo(x0+scaleW-len,y);
+        ctx.lineTo(x0+scaleW-8*state.dpr,y);
+        ctx.stroke();
+
+        if(isMajor){
+          ctx.fillText(`${Math.round(z)}`, x0+10*state.dpr, Math.min(H-4, y+4*state.dpr));
+        }
+      }
+
+      ctx.fillStyle="rgba(111,184,255,0.98)";
+      ctx.font=`${Math.round(14*state.dpr)}px system-ui`;
+      ctx.fillText("cm", x0+10*state.dpr, 18*state.dpr);
+
+      drawFocusMarker(ctx,view);
+
+      ctx.restore();
+    }
+
+    function drawRoiAndHandles(ctx,view){
+      const r=roiRectPx(view);
+      ctx.save();
+      ctx.lineWidth=Math.max(2,2*state.dpr);
+
+      const active=(state.params.cfOn||state.params.powerOn);
+      ctx.strokeStyle=active?"rgba(111,184,255,0.96)":"rgba(255,255,255,0.28)";
+      ctx.setLineDash(active?[]:[9*state.dpr,6*state.dpr]);
+      ctx.strokeRect(r.x,r.y,r.w,r.h);
+
+      ctx.setLineDash([]);
+      const hs=6*state.dpr;
+      const corners=[[r.x,r.y],[r.x+r.w,r.y],[r.x,r.y+r.h],[r.x+r.w,r.y+r.h]];
+      for(const [cx,cy] of corners){
+        ctx.fillStyle=active?"rgba(111,184,255,0.96)":"rgba(255,255,255,0.52)";
+        ctx.fillRect(cx-hs,cy-hs,hs*2,hs*2);
+        ctx.strokeStyle="rgba(0,0,0,0.65)";
+        ctx.strokeRect(cx-hs,cy-hs,hs*2,hs*2);
+      }
+
+      if(state.params.powerOn){
+        const e=gateEllipsePx(r);
+        ctx.strokeStyle="rgba(255,190,80,0.98)";
+        ctx.lineWidth=Math.max(2,2*state.dpr);
+        ctx.beginPath();
+        ctx.ellipse(e.cx,e.cy,e.rx,e.ry,0,0,Math.PI*2);
+        ctx.stroke();
+
+        ctx.fillStyle="rgba(255,190,80,0.12)";
+        ctx.beginPath();
+        ctx.ellipse(e.cx,e.cy,e.rx,e.ry,0,0,Math.PI*2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawWatermark(ctx,view){
+      if(!state._logoImg) return;
+      const img=state._logoImg;
+      const w=50*state.dpr,h=50*state.dpr;
+      ctx.save();
+      ctx.globalAlpha=0.08;
+      ctx.drawImage(img, view.imgX+14*state.dpr, view.imgY+view.imgH-h-14*state.dpr, w, h);
+      ctx.restore();
+    }
+
+    function drawFrame(){
+      resizeDisplayCanvas();
+      const view=computeViewLayout();
+      const ctx=state.mainCtx;
+
+      ctx.clearRect(0,0,view.W,view.H);
+      ctx.fillStyle="#000"; ctx.fillRect(0,0,view.W,view.H);
+
+      ctx.save();
+      ctx.imageSmoothingEnabled=true;
+
+      const w=state.simW,h=state.simH;
+      const img=state.simImageData;
+      const d=img.data;
+      for(let i=0;i<w*h;i++){
+        const v=Math.round(U.clamp(state.simLuma[i],0,1)*255);
+        const p=i*4; d[p]=v; d[p+1]=v; d[p+2]=v; d[p+3]=255;
+      }
+      state.simCtx.putImageData(img,0,0);
+      ctx.drawImage(state.simCanvas,0,0,w,h,view.imgX,view.imgY,view.imgW,view.imgH);
+
+      renderOverlayToMain(ctx,view);
+      ctx.restore();
+
+      drawRoiAndHandles(ctx,view);
+      drawDepthScale(ctx,view);
+      drawWatermark(ctx,view);
+
+      el.statRes.textContent=`${state.simW}×${state.simH}`;
+      el.statQuality.textContent=chooseQuality().label;
+      const mode=state.params.powerOn?"POWER":(state.params.cfOn?"CF":"B-MODE");
+      el.statMode.textContent=mode;
+    }
+
+    function loop(now){
+      if(!state.lastRAF) state.lastRAF=now;
+      const dt=now-state.lastRAF;
+      state.lastRAF=now;
+
+      const instFps=dt>0?(1000/dt):0;
+      state.fpsSmoothed=state.fpsSmoothed ? (state.fpsSmoothed*0.92 + instFps*0.08) : instFps;
+      el.statFps.textContent=state.fpsSmoothed.toFixed(0);
+
+      const targetFps=state.params.fr;
+      const simInterval=1000/Math.max(1,targetFps);
+
+      ensureSimBuffers();
+
+      state.focusAnim = state.params.focusCm;
+      if(el.sFocus && !state.focusDragging){
+        el.sFocus.value = String(state.focusAnim.toFixed(2));
+      }
+
+      if(!state.lastSim) state.lastSim=now;
+      if((now-state.lastSim)>=simInterval){
+        state.lastSim=now;
+        computeBModeFrame(state.frameIndex);
+        state.frameIndex++;
+      }
+
+      if(now-state.lastMetricsAt>650){
+        state.lastMetricsAt=now;
+        state.metrics=window.Assistant.computeMetrics(state.simLuma,state.simW,state.simH);
+        buildMetricsUI();
+        renderAssistant();
+      }
+
+      drawFrame();
+      requestAnimationFrame(loop);
+    }
+
+    function applyPreset(p){
+      state.presetName=p.name;
+      state.params.gain=p.gain;
+      state.params.drDb=p.drDb;
+      state.params.fr=p.fr;
+      state.params.freqMHz=p.freqMHz;
+      state.params.depthCm=p.depthCm;
+      state.params.cfBox=p.cfBox;
+      state.params.cfOn=!!p.cfOn;
+      state.params.powerOn=!!p.powerOn;
+
+      state.params.focusCm = (typeof p.focusCm==="number") ? p.focusCm : Math.max(0.8, p.depthCm*0.45);
+      state.focusAnim = state.params.focusCm;
+      if(el.sFocus) setSlider("sFocus", state.params.focusCm);
+
+      state.tgc=p.tgc.slice();
+
+      setSlider("sGain",p.gain);
+      setSlider("sDR",p.drDb);
+      setSlider("sFR",p.fr);
+      setSlider("sFreq",p.freqMHz);
+      setSlider("sDepth",p.depthCm);
+      setSlider("sCFBox",p.cfBox);
+
+      state.roi={x:0.35,y:0.30,w:0.30,h:0.24};
+      setRoiFromBoxPercent(p.cfBox);
+      state.gate={cx:0.50,cy:0.50,rx:0.34,ry:0.26};
+
+      updateUIValues();
+      renderAssistant();
+    }
+
+    function bindControls(){
+      el.sGain.addEventListener("input",()=>{state.params.gain=Number(el.sGain.value); updateUIValues();});
+      el.sDR.addEventListener("input",()=>{state.params.drDb=Number(el.sDR.value); updateUIValues();});
+      el.sFR.addEventListener("input",()=>{state.params.fr=Number(el.sFR.value); updateUIValues();});
+      el.sFreq.addEventListener("input",()=>{state.params.freqMHz=Number(el.sFreq.value); updateUIValues();});
+      el.sDepth.addEventListener("input",()=>{state.params.depthCm=Number(el.sDepth.value); updateUIValues();});
+      el.sCFBox.addEventListener("input",()=>{
+        state.params.cfBox=Number(el.sCFBox.value);
+        setRoiFromBoxPercent(state.params.cfBox);
+        updateUIValues();
+      });
+
+      if(el.sFocus){
+        el.sFocus.addEventListener("pointerdown",()=>{ state.focusDragging=true; });
+        window.addEventListener("pointerup",()=>{ state.focusDragging=false; });
+
+        el.sFocus.addEventListener("input",()=>{
+          state.params.focusCm = Number(el.sFocus.value);
+          state.focusAnim = state.params.focusCm;
+
+          const targetF = freqTargetForFocus(state.params.focusCm, state.params.depthCm);
+          const newFreq = U.clamp(state.params.freqMHz * 0.75 + targetF * 0.25, 2, 15);
+          state.params.freqMHz = newFreq;
+          el.sFreq.value = String(newFreq);
+
+          updateUIValues();
+        });
+      }
+
+      el.tCF.addEventListener("change",()=>{
+        const on=el.tCF.checked;
+        state.params.cfOn=on;
+        if(on) state.params.powerOn=false;
+        updateUIValues();
+      });
+      el.tPower.addEventListener("change",()=>{
+        const on=el.tPower.checked;
+        state.params.powerOn=on;
+        if(on) state.params.cfOn=false;
+        updateUIValues();
+      });
+
+      for(let i=0;i<8;i++){
+        q(`tgc${i}`).addEventListener("input",()=>{
+          state.tgc[i]=Number(q(`tgc${i}`).value);
+          updateUIValues();
+        });
+      }
+
+      el.presetMSK.addEventListener("click",()=>applyPreset(PRESETS.MSK));
+      el.presetSuperficial.addEventListener("click",()=>applyPreset(PRESETS.Superficial));
+      el.presetThyroid.addEventListener("click",()=>applyPreset(PRESETS.Thyroid));
+      el.btnReset.addEventListener("click",()=>applyPreset(PRESETS.MSK));
+
+      el.recs.addEventListener("click",(ev)=>{
+        const btn=ev.target.closest(".applyBtn");
+        if(!btn) return;
+        const i=Number(btn.dataset.i);
+        const rec=state.uiRecs[i];
+        if(rec && rec.action) applyAssistantAction(rec.action);
+      });
+    }
+
+    function loadLogoForWatermark(){
+      const img=new Image();
+      img.onload=()=>{state._logoImg=img;};
+      img.src="logo.png";
+    }
+
+    function init(){
+      bindUI();
+      buildTgcUI();
+      buildNoiseTextures();
+      loadLogoForWatermark();
+
+      state.displayCanvas=el.usgCanvas;
+      state.mainCtx=state.displayCanvas.getContext("2d",{alpha:false});
+
+      ensureSimCtx();
+      ensureSimBuffers();
+
+      setSlider("sGain",PRESETS.MSK.gain);
+      setSlider("sDR",PRESETS.MSK.drDb);
+      setSlider("sFR",PRESETS.MSK.fr);
+      setSlider("sFreq",PRESETS.MSK.freqMHz);
+      setSlider("sDepth",PRESETS.MSK.depthCm);
+      setSlider("sCFBox",PRESETS.MSK.cfBox);
+      if(el.sFocus) setSlider("sFocus",PRESETS.MSK.focusCm);
+
+      bindControls();
+      bindCanvasPointers();
+
+      applyPreset(PRESETS.MSK);
+      updateUIValues();
+      buildMetricsUI();
+      renderAssistant();
+
+      const ro=new ResizeObserver(()=>resizeDisplayCanvas());
+      ro.observe(state.displayCanvas);
+
+      requestAnimationFrame(loop);
+    }
+
+    document.addEventListener("DOMContentLoaded",init);
+  })();
+  </script>
+
+  <script>
+  // asysta-merge.js (inline)
+  // Warstwa edukacyjna przeniesiona z asysta.html — dodana w sposób nieinwazyjny:
+  // - nie dotyka logiki symulatora z probna.html
+  // - jedynie dopisuje krótkie objaśnienia oraz 4 statystyki w metrykach
+  (function(){
+    "use strict";
+
+    const MARK = "\n\n— EDUKACJA (asysta) —";
+    const gridId = "metricsGrid";
+    const textId = "assistantText";
+    const footId = "assistantFoot";
+
+    const q = (id)=>document.getElementById(id);
+
+    function num(id){
+      const e=q(id);
+      if(!e) return NaN;
+      const v=parseFloat(e.value);
+      return Number.isFinite(v)?v:NaN;
+    }
+    function bool(id){
+      const e=q(id);
+      return !!(e && e.checked);
+    }
+
+    function readParams(){
+      const tgc=[];
+      for(let i=0;i<8;i++){
+        const v=num(`tgc${i}`);
+        tgc.push(Number.isFinite(v)?v:0);
+      }
+      return {
+        gain:num("sGain"),
+        drDb:num("sDR"),
+        fr:num("sFR"),
+        freqMHz:num("sFreq"),
+        depthCm:num("sDepth"),
+        cfBox:num("sCFBox"),
+        focusCm:num("sFocus"),
+        cfOn:bool("tCF"),
+        powerOn:bool("tPower"),
+        tgc
+      };
+    }
+
+    function computeExtra(p){
+      // Heurystyki edukacyjne z asysta.html (nie są „prawdziwymi” obliczeniami fizycznymi,
+      // ale pomagają zrozumieć zależności).
+      const freq=Math.max(0.1,p.freqMHz);
+      const pulseLength=1/freq;
+      const axialResMm=pulseLength*0.5;
+
+      const focalZoneWidth=0.3+(12-freq)*0.05;
+      const lateralResMm=Math.max(0.05,focalZoneWidth*0.8);
+
+      const attenuation=Math.exp(-p.depthCm*freq/30);
+      let penetration="Słaba";
+      if(attenuation>0.7) penetration="Dobra";
+      else if(attenuation>0.5) penetration="Średnia";
+
+      const snrDb=20-freq+(p.gain/2.5)-(p.depthCm*2);
+
+      return {axialResMm,lateralResMm,penetration,snrDb,attenuation};
+    }
+
+    function isTgcMonotonic(p){
+      const t=p.tgc;
+      for(let i=0;i<t.length-1;i++){
+        if(t[i+1] < t[i]-1) return false;
+      }
+      return true;
+    }
+
+    function eduAdvice(p,extra){
+      const lines=[];
+
+      // Focus vs Frequency (z asysta.html, skrócone)
+      if(p.focusCm < 0.8){
+        lines.push("📍 Focus bardzo płytko (<0.8 cm): skóra/podskórna → Frequency 15–18 MHz.");
+      } else if(p.focusCm < 1.5){
+        lines.push("📍 Focus płytko (0.8–1.5 cm): powięź/górne mięśnie → Frequency 12–15 MHz.");
+      } else if(p.focusCm <= 3.0){
+        lines.push("📍 Focus średni (1.5–3 cm): typowe MSK → Frequency 10–14 MHz.");
+      } else if(p.focusCm <= 4.5){
+        lines.push("📍 Focus głęboki (3–4.5 cm): głębokie mięśnie/kość → Frequency 7–11 MHz.");
+      } else {
+        lines.push("📍 Focus bardzo głęboki (>4.5 cm): struktury głębokie → Frequency 5–8 MHz + Gain/TGC ↑.");
+      }
+
+      // Penetration hint
+      if(extra.penetration==="Słaba"){
+        lines.push("🔊 Penetracja słaba: spróbuj Frequency ↓ lub Depth ↓; dół doświetl TGC (poziomy 6–8).");
+      } else if(extra.penetration==="Średnia"){
+        lines.push("🔊 Penetracja średnia: jeśli dół jest ciemny — lekko TGC ↑ na dole.");
+      } else {
+        lines.push("🔊 Penetracja dobra: możesz rozważyć Frequency ↑ dla lepszej rozdzielczości.");
+      }
+
+      // Gain/DR combo
+      if(p.gain > 70 && p.drDb < 55){
+        lines.push("☀️ Gain wysoki + DR niski: ryzyko przepaleń — spróbuj Gain ↓ lub DR ↑.");
+      }
+      if(p.gain < 40 && p.drDb > 65){
+        lines.push("🌑 Gain niski + DR wysoki: obraz może być „płaski/ciemny” — spróbuj Gain ↑ lub DR ↓.");
+      }
+
+      // Doppler / CF box vs FR
+      const mode=p.powerOn ? "POWER" : (p.cfOn ? "CF" : "B-MODE");
+      if(mode!=="B-MODE"){
+        if(p.cfBox > 55){
+          lines.push("🎨 Duży CF Box mocno obniża FR — zmniejsz CF Box, jeśli obraz „tnie”.");
+        } else {
+          lines.push("🎨 CF/POWER: utrzymuj CF Box możliwie mały; typowo FR 25–40 fps.");
+        }
+      } else if(p.fr < 25){
+        lines.push("🎞️ Frame Rate niski: jeśli to nie Doppler, możesz go podnieść.");
+      }
+
+      // TGC shape
+      if(p.depthCm > 4.0 && !isTgcMonotonic(p)){
+        lines.push("🎚️ Przy głębszym badaniu TGC zwykle rośnie z głębokością (bez spadków w dole).");
+      }
+
+      return lines.slice(0,6).join("\n");
+    }
+
+    function desiredAssistantText(base, edu){
+      const before=String(base||"").split(MARK)[0].trimEnd();
+      return before + MARK + "\n" + edu;
+    }
+
+    function desiredFoot(p,extra){
+      const mode=p.powerOn ? "POWER" : (p.cfOn ? "CF" : "B-MODE");
+      return [
+        "Tip: badanie płytkie (stopa/ścięgna) — zwykle Depth ↓, Frequency ↑; TGC użyj do dopracowania dołu.",
+        `Edukacja: Axial~${extra.axialResMm.toFixed(2)} mm • Lateral~${extra.lateralResMm.toFixed(2)} mm • Penetracja: ${extra.penetration} • SNR~${extra.snrDb.toFixed(0)} dB • Tryb: ${mode}`
+      ].join("  ");
+    }
+
+    function upsertExtraMetrics(extra){
+      const grid=q(gridId);
+      if(!grid) return;
+
+      const existing=[...grid.querySelectorAll('[data-asysta="1"]')];
+      existing.forEach(n=>n.remove());
+
+      const html = `
+        <div class="metric" data-asysta="1"><div class="k">axialRes (mm)</div><div class="v">${extra.axialResMm.toFixed(2)}</div></div>
+        <div class="metric" data-asysta="1"><div class="k">lateralRes (mm)</div><div class="v">${extra.lateralResMm.toFixed(2)}</div></div>
+        <div class="metric" data-asysta="1"><div class="k">penetration</div><div class="v">${extra.penetration}</div></div>
+        <div class="metric" data-asysta="1"><div class="k">snr (dB)</div><div class="v">${extra.snrDb.toFixed(0)}</div></div>
+      `;
+      grid.insertAdjacentHTML("beforeend", html);
+    }
+
+    let lastSig="";
+    let lastUiText="";
+    let lastUiFoot="";
+
+    function tick(now){
+      const p=readParams();
+      if(!Number.isFinite(p.gain) || !Number.isFinite(p.drDb) || !Number.isFinite(p.fr) ||
+         !Number.isFinite(p.freqMHz) || !Number.isFinite(p.depthCm) || !Number.isFinite(p.cfBox) ||
+         !Number.isFinite(p.focusCm)){
+        requestAnimationFrame(tick);
+        return;
+      }
+
+      const extra=computeExtra(p);
+      const edu=eduAdvice(p,extra);
+
+      const sig=JSON.stringify([p.gain,p.drDb,p.fr,p.freqMHz,p.depthCm,p.cfBox,p.focusCm,p.cfOn,p.powerOn,p.tgc,extra.penetration]);
+
+      // Odświeżaj co ~250ms (żeby nie obciążać DOM), ale także po zmianie sygnatury
+      const force = (sig!==lastSig);
+
+      const tEl=q(textId);
+      if(tEl){
+        const desired=desiredAssistantText(tEl.textContent,edu);
+        if(force || tEl.textContent!==desired){
+          tEl.textContent=desired;
+          lastUiText=desired;
+        }
+      }
+
+      const fEl=q(footId);
+      if(fEl){
+        const desired=desiredFoot(p,extra);
+        if(force || fEl.textContent!==desired){
+          fEl.textContent=desired;
+          lastUiFoot=desired;
+        }
+      }
+
+      // Metryki: probna.html przebudowuje #metricsGrid często — więc dopinamy za każdym razem,
+      // gdy nasze elementy znikną, albo gdy wartości się zmienią.
+      const grid=q(gridId);
+      if(grid){
+        const missing = !grid.querySelector('[data-asysta="1"]');
+        if(force || missing){
+          upsertExtraMetrics(extra);
+        }
+      }
+
+      lastSig=sig;
+
+      // throttle: jeśli brak zmian, i UI już ma nasze wartości, ogranicz częstotliwość
+      const next = force ? 1 : 6; // ~1/6 klatek
+      let c=0;
+      function rafLoop(t){
+        c++;
+        if(c>=next) tick(t);
+        else requestAnimationFrame(rafLoop);
+      }
+      requestAnimationFrame(rafLoop);
+    }
+
+    document.addEventListener("DOMContentLoaded",()=>{
+      requestAnimationFrame(tick);
+    });
+  })();
+  </script>
+
+
+<script>
+// lock.js (inline) — prosta blokada hasłem (frontend)
+(function(){
+  "use strict";
+  const PASS = "STOPAPODGLOWICA";
+
+  const lockScreen = document.getElementById("lockScreen");
+  const input = document.getElementById("lockPass");
+  const btn = document.getElementById("lockBtn");
+  const err = document.getElementById("lockError");
+
+  function unlock(){
+    if(!lockScreen) return;
+    lockScreen.style.display = "none";
+    document.body.classList.remove("lockBlur");
+  }
+
+  function tryUnlock(){
+    const v = (input?.value || "").trim();
+    if(v === PASS){
+      err.textContent = "";
+      unlock();
+    }else{
+      err.textContent = "Nieprawidłowe hasło.";
+      if(input){
+        input.focus();
+        input.select();
+      }
+    }
+  }
+
+  if(btn) btn.addEventListener("click", tryUnlock);
+  if(input) input.addEventListener("keydown", (e)=>{ if(e.key === "Enter") tryUnlock(); });
+
+  // autofocus
+  setTimeout(()=>{ input && input.focus(); }, 60);
+})();
+</script>
+</body>
+</html>
