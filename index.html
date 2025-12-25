@@ -727,18 +727,6 @@ body.lockBlur .app, body.lockBlur .app *{pointer-events:none}
             ROI: przeciągnij / zmień rozmiar.
           </div>
         </div>
-
-        <div class="group">
-          <details id="techDetails">
-            <summary>Metryki techniczne (dla ciekawych)</summary>
-            <div class="metricsWrap">
-              <div class="metricsGrid" id="metricsGrid"></div>
-              <div class="miniNote" style="margin-top:10px">
-                Asystent poniżej mówi prosto: <strong>co przestawić</strong> i <strong>dlaczego</strong>.
-              </div>
-            </div>
-          </details>
-        </div>
       </section>
 
       <!-- Assistant -->
@@ -1317,6 +1305,7 @@ el.roiPill.textContent=(state.params.cfOn||state.params.powerOn)?"ROI ACTIVE":"R
     }
 
     function buildMetricsUI(){
+      if(!el.metricsGrid) return;
       const m=state.metrics;
       const rows=[
         ["meanLuma", m.meanLuma.toFixed(3)],
@@ -2382,12 +2371,11 @@ for(let i=0;i<8;i++){
 // asysta-merge.js (inline)
   // Warstwa edukacyjna przeniesiona z asysta.html — dodana w sposób nieinwazyjny:
   // - nie dotyka logiki symulatora z probna.html
-  // - jedynie dopisuje krótkie objaśnienia oraz 4 statystyki w metrykach
+  // - jedynie dopisuje krótkie objaśnienia
   (function(){
     "use strict";
 
     const MARK = "\n\n— EDUKACJA (asysta) —";
-    const gridId = "metricsGrid";
     const textId = "assistantText";
     const footId = "assistantFoot";
 
@@ -2518,24 +2506,6 @@ for(let i=0;i<8;i++){
       ].join("  ");
     }
 
-    function upsertExtraMetrics(extra){
-      const grid=q(gridId);
-      if(!grid) return;
-
-      let wrap = grid.querySelector('[data-asysta-wrap="1"]');
-      if(!wrap){
-        wrap=document.createElement("div");
-        wrap.dataset.asystaWrap="1";
-        wrap.style.display="contents";
-        wrap.innerHTML = `
-          <div class="metric" data-asysta="1"><div class="k">axial (mm)</div><div class="v" data-k="axial">—</div></div>
-          <div class="metric" data-asysta="1"><div class="k">lateral (mm)</div><div class="v" data-k="lateral">—</div></div>
-          <div class="metric" data-asysta="1"><div class="k">penetration</div><div class="v" data-k="pen">—</div></div>
-          <div class="metric" data-asysta="1"><div class="k">snr (dB)</div><div class="v" data-k="snr">—</div></div>
-        `;
-        grid.appendChild(wrap);
-      }
-
       const set=(key,val)=>{
         const n=wrap.querySelector(`[data-k="${key}"]`);
         if(n && n.textContent!==val) n.textContent=val;
@@ -2584,17 +2554,6 @@ for(let i=0;i<8;i++){
           lastUiFoot=desired;
         }
       }
-
-      // Metryki: probna.html przebudowuje #metricsGrid często — więc dopinamy za każdym razem,
-      // gdy nasze elementy znikną, albo gdy wartości się zmienią.
-      const grid=q(gridId);
-      if(grid){
-        const missing = !grid.querySelector('[data-asysta="1"]');
-        if(force || missing){
-          upsertExtraMetrics(extra);
-        }
-      }
-
       lastSig=sig;
 
       // throttle: jeśli brak zmian, i UI już ma nasze wartości, ogranicz częstotliwość
@@ -2613,40 +2572,6 @@ for(let i=0;i<8;i++){
     });
   })();
 </script>
-
-<script>
-// details-fix.js — wymusza poprawne zwijanie/rozwijanie panelu „Metryki techniczne”
-// + stabilizacja layoutu (żeby ekran USG wracał do poprzedniego rozmiaru po zwinięciu)
-(function(){
-  const d = document.getElementById("techDetails");
-  if(!d) return;
-  const s = d.querySelector("summary");
-  if(!s) return;
-
-  function flushLayout(){
-    const consoleEl = document.querySelector(".console");
-    if(consoleEl) consoleEl.getBoundingClientRect();
-    else document.body.getBoundingClientRect();
-  }
-
-  function toggle(e){
-    if(e) e.preventDefault();
-    d.open = !d.open;
-
-    // Wymuś reflow teraz i po kolejnej klatce — usuwa przypadki „zawieszonego” układu po zwinięciu.
-    flushLayout();
-    requestAnimationFrame(flushLayout);
-  }
-
-  s.addEventListener("click", toggle);
-  s.addEventListener("keydown", (e)=>{
-    if(e.key === "Enter" || e.key === " "){
-      toggle(e);
-    }
-  });
-})();
-</script>
-
 
 <script>
 // lock.js (inline) — prosta blokada hasłem (frontend) + utrzymanie sesji (localStorage)
