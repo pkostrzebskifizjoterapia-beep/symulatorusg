@@ -188,35 +188,7 @@
       box-shadow:0 18px 70px rgba(0,0,0,0.34);
     }
     .screenWrap{position:relative;width:100%;flex:1 1 auto;min-height:340px}
-    .usgCanvas{width:100%;height:100%;display:block;background:#000;touch-action:none;user-select:none;position:relative;z-index:2}
-
-.studyImg{
-  position:absolute;inset:0;
-  width:100%;height:100%;
-  object-fit:contain;
-  z-index:1;
-  pointer-events:none;
-  user-select:none;
-  background:#000;
-}
-.studyBar{
-  display:none;
-  gap:12px;
-  align-items:center;
-  justify-content:space-between;
-  padding:10px 12px;
-  border-top:1px solid rgba(255,255,255,0.10);
-  background:rgba(18,26,35,0.92);
-}
-.studyBar.is-visible{display:flex}
-.studyText{
-  color:rgba(255,255,255,0.86);
-  font-weight:850;
-  font-size:14px;
-  line-height:1.35;
-  letter-spacing:.1px;
-}
-
+    .usgCanvas{width:100%;height:100%;display:block;background:#000;touch-action:none;user-select:none}
 
     .screenLegend{
       display:flex;gap:10px;padding:10px 12px;border-top:1px solid rgba(255,255,255,0.10);
@@ -666,12 +638,7 @@ body.lockBlur .app, body.lockBlur .app *{pointer-events:none}
       <!-- Screen -->
       <section class="screenPanel" aria-label="Ekran USG">
         <div class="screenWrap">
-          <img id="studyImg" class="studyImg" src="wzor.png" alt="Wzór obrazu USG" />
           <canvas id="usgCanvas" class="usgCanvas"></canvas>
-        </div>
-        <div id="studyBar" class="studyBar" aria-label="Tryb nauki na zdjęciu">
-          <div class="studyText">Tak wygląda idalenie uzyskany przeze mnie obraz zwapnienia w ścięgnie mięśnia piszczelowego tylnego w stopie</div>
-          <button class="btn ghost" id="btnStudyReset" type="button">Zresetuj obraz</button>
         </div>
         <div class="screenLegend">
           <div class="legendPill">Tryb: <strong id="modePill">B-mode</strong></div>
@@ -695,10 +662,6 @@ body.lockBlur .app, body.lockBlur .app *{pointer-events:none}
             <button class="btn ghost" id="btnReset">Reset (MSK)</button>
             <button class="btn ghost" id="btnMeasure">Pomiar</button>
             <button class="btn ghost" id="btnMeasureReset" disabled>Reset pomiaru</button>
-          </div>
-          <div class="btnRow" style="margin-top:10px">
-            <button class="btn" id="btnLearnClean" type="button">UCZ SIĘ NA CZYSTYM ECHU</button>
-            <button class="btn" id="btnLearnPhoto" type="button">UCZ SIĘ NA ZDJĘCIU</button>
           </div>
         </div>
 
@@ -1189,8 +1152,6 @@ body.lockBlur .app, body.lockBlur .app *{pointer-events:none}
 
     const state={
       presetName:"MSK",
-      studyMode:"clean",
-      studyOverlay:false,
       params:{gain:52,drDb:55,fr:35,freqMHz:10.0,depthCm:4.5,cfBox:25,focusCm:2.0,cfOn:false,powerOn:false},
       showCfBox:true,
       tgc:PRESETS.MSK.tgc.slice(),
@@ -1248,9 +1209,6 @@ body.lockBlur .app, body.lockBlur .app *{pointer-events:none}
 
     function bindUI(){
       el.usgCanvas=q("usgCanvas");
-      el.studyImg=q("studyImg");
-      el.studyBar=q("studyBar");
-      el.btnStudyReset=q("btnStudyReset");
       el.tgcGrid=q("tgcGrid");
       el.modePill=q("modePill");
 el.roiPill=q("roiPill");
@@ -1276,9 +1234,6 @@ el.metricsGrid=q("metricsGrid");
       el.btnMeasure=q("btnMeasure");
       el.btnMeasureReset=q("btnMeasureReset");
 
-      el.btnLearnClean=q("btnLearnClean");
-      el.btnLearnPhoto=q("btnLearnPhoto");
-
       el.measPill=q("measPill");
 
       el.scoreValue=q("scoreValue");
@@ -1301,48 +1256,7 @@ el.metricsGrid=q("metricsGrid");
       if(el.presetSuperficial) el.presetSuperficial.classList.toggle("is-active", state.presetName==="Superficial");
       if(el.presetThyroid) el.presetThyroid.classList.toggle("is-active", state.presetName==="Thyroid");
       if(el.btnMeasure) el.btnMeasure.classList.toggle("is-active", !!(state.measure && state.measure.mode));
-      if(el.btnLearnClean) el.btnLearnClean.classList.toggle("is-active", state.studyMode==="clean");
-      if(el.btnLearnPhoto) el.btnLearnPhoto.classList.toggle("is-active", state.studyMode==="photo");
     }
-
-
-function updateStudyUI(){
-  const canvas = el.usgCanvas;
-  const img = el.studyImg;
-  const bar = el.studyBar;
-  const photoMode = state.studyMode === "photo";
-
-  if(img) img.style.display = photoMode ? "block" : "none";
-  if(bar) bar.classList.toggle("is-visible", photoMode);
-
-  if(!canvas) return;
-
-  if(!photoMode){
-    state.studyOverlay = false;
-    canvas.style.opacity = "1";
-    canvas.style.pointerEvents = "auto";
-  }else{
-    if(state.studyOverlay){
-      canvas.style.opacity = "0.92";
-      canvas.style.pointerEvents = "auto";
-    }else{
-      canvas.style.opacity = "0";
-      canvas.style.pointerEvents = "none";
-    }
-  }
-}
-
-function setStudyMode(mode){
-  state.studyMode = (mode==="photo") ? "photo" : "clean";
-  // Po wejściu w tryb zdjęcia pokaż najpierw sam wzór (bez nakładki),
-  // a użytkownik uruchamia nakładkę przyciskiem „Zresetuj obraz”.
-  if(state.studyMode==="photo") state.studyOverlay = false;
-  updateButtonStates();
-  updateStudyUI();
-  // Canvas ma stały rozmiar w układzie, ale przy zmianie widoczności warto przeliczyć.
-  resizeDisplayCanvas();
-  state.metricsDirty = true;
-}
 
 function updateMeasurePill(){
       if(!el.measPill) return;
@@ -2402,21 +2316,6 @@ for(let i=0;i<8;i++){
       el.presetThyroid.addEventListener("click",()=>applyPreset(PRESETS.Thyroid));
       el.btnReset.addEventListener("click",()=>applyPreset(PRESETS.MSK));
 
-      // Tryb nauki: czyste echo vs. nauka na zdjęciu
-      if(el.btnLearnClean) el.btnLearnClean.addEventListener("click",()=>setStudyMode("clean"));
-      if(el.btnLearnPhoto) el.btnLearnPhoto.addEventListener("click",()=>setStudyMode("photo"));
-
-      // „Zresetuj obraz” w trybie zdjęcia: uruchom nakładkę canvas na wzorze
-      if(el.btnStudyReset){
-        el.btnStudyReset.addEventListener("click",()=>{
-          state.studyOverlay = true;
-          updateStudyUI();
-          resizeDisplayCanvas();
-          state.metricsDirty = true;
-        });
-      }
-
-
       // Pomiar: tryb edukacyjny — kliknij 2 punkty na ekranie USG
       el.btnMeasure.addEventListener("click",()=>{
         state.measure.mode = !state.measure.mode;
@@ -2502,8 +2401,6 @@ for(let i=0;i<8;i++){
       bindCanvasPointers();
 
       applyPreset(PRESETS.MSK);
-      updateButtonStates();
-      updateStudyUI();
       // Start TGC sliders at 0 (center) on first load
       state.tgc = new Array(8).fill(0);
       updateUIValues();
