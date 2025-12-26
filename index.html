@@ -1407,7 +1407,7 @@ function renderAssistant(){
     c.recsHTML = recsHTML;
   }
 
-  const footText = "Tip: badanie płytkie (stopa/ścięgna) — zwykle Depth ↓, Frequency ↑; TGC użyj do dopracowania dołu.";
+  const footText = rep._asystaFoot || "Tip: badanie płytkie (stopa/ścięgna) — zwykle Depth ↓, Frequency ↑; TGC użyj do dopracowania dołu.";
   if(c.footText !== footText){
     el.assistantFoot.textContent = footText;
     c.footText = footText;
@@ -2566,61 +2566,36 @@ for(let i=0;i<8;i++){
       set("snr", extra.snrDb.toFixed(0));
     }
 
-    let lastSig="";
-    let lastUiText="";
-    let lastUiFoot="";
+    // --- Integracja bez migania ---
+// Zamiast nadpisywać DOM w pętli RAF (powodowało migotanie przy suwakach),
+// dopinamy edukację do wyniku window.Assistant.analyze(), a DOM aktualizuje wyłącznie renderAssistant().
+function attachToAnalyze(){
+  if(!window.Assistant || typeof window.Assistant.analyze!=="function"){
+    requestAnimationFrame(attachToAnalyze);
+    return;
+  }
+  if(window.Assistant.__asystaPatched) return;
 
-    function tick(now){
-      const p=readParams();
-      if(!Number.isFinite(p.gain) || !Number.isFinite(p.drDb) || !Number.isFinite(p.fr) ||
-         !Number.isFinite(p.freqMHz) || !Number.isFinite(p.depthCm) || !Number.isFinite(p.cfBox) ||
-         !Number.isFinite(p.focusCm)){
-        requestAnimationFrame(tick);
-        return;
+  const baseAnalyze = window.Assistant.analyze;
+  window.Assistant.analyze = function(state, m){
+    const rep = baseAnalyze(state, m);
+    try{
+      const p = readParams();
+      const extra = computeExtra(p);
+      const edu = eduAdvice(p, extra);
+      if(edu){
+        rep.headerText = (rep.headerText || "") + MARK + "\n" + edu;
       }
+      const foot = desiredFoot(p, extra);
+      if(foot) rep._asystaFoot = foot;
+    }catch(e){}
+    return rep;
+  };
+  window.Assistant.__asystaPatched = true;
+}
+attachToAnalyze();
 
-      const extra=computeExtra(p);
-      const edu=eduAdvice(p,extra);
-
-      const sig=JSON.stringify([p.gain,p.drDb,p.fr,p.freqMHz,p.depthCm,p.cfBox,p.focusCm,p.cfOn,p.powerOn,p.tgc,extra.penetration]);
-
-      // Odświeżaj co ~250ms (żeby nie obciążać DOM), ale także po zmianie sygnatury
-      const force = (sig!==lastSig);
-
-      const tEl=q(textId);
-      if(tEl){
-        const desired=desiredAssistantText(tEl.textContent,edu);
-        if(force || tEl.textContent!==desired){
-          tEl.textContent=desired;
-          lastUiText=desired;
-        }
-      }
-
-      const fEl=q(footId);
-      if(fEl){
-        const desired=desiredFoot(p,extra);
-        if(force || fEl.textContent!==desired){
-          fEl.textContent=desired;
-          lastUiFoot=desired;
-        }
-      }
-      lastSig=sig;
-
-      // throttle: jeśli brak zmian, i UI już ma nasze wartości, ogranicz częstotliwość
-      const next = force ? 1 : 6; // ~1/6 klatek
-      let c=0;
-      function rafLoop(t){
-        c++;
-        if(c>=next) tick(t);
-        else requestAnimationFrame(rafLoop);
-      }
-      requestAnimationFrame(rafLoop);
-    }
-
-    document.addEventListener("DOMContentLoaded",()=>{
-      requestAnimationFrame(tick);
-    });
-  })();
+    })();
 </script>
 
 <script>

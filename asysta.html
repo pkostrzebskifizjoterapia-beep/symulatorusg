@@ -261,8 +261,7 @@
             border-left: 3px solid var(--color-primary);
             border-radius: 3px;
             margin-top: 8px;
-            font-size: 10px;
-            line-height: 1.5;
+            font-size: 11px;
         }
 
         .stats-panel {
@@ -332,33 +331,6 @@
 
         .quality-bar.bad .quality-fill {
             background: var(--color-error);
-        }
-
-        button {
-            background: var(--color-primary);
-            color: #ffffff;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 150ms ease;
-            width: 100%;
-            margin-top: 10px;
-        }
-
-        button:hover {
-            background: var(--color-primary-hover);
-        }
-
-        button:active {
-            background: var(--color-primary-active);
-        }
-
-        button:focus-visible {
-            outline: none;
-            box-shadow: var(--focus-ring);
         }
 
         .info-section {
@@ -433,10 +405,10 @@
                 <div class="info-section">
                     <div class="info-title">📚 Zasady fizyki ultrasonografii</div>
                     <div class="info-text">
-                        <strong>Focal Zone (Strefa ogniskowania):</strong> Najwęźsze miejsce wiązki ultradźwięków, gdzie rozdzielczość jest najlepsza. Kiedy przesuwasz focus, zmienia się głębokość tej strefy.<br><br>
-                        <strong>Frequency (Częstotliwość):</strong> Wyższa = lepsza rozdzielczość ale słabsza penetracja. Niższa = lepsza penetracja ale gorsza rozdzielczość.<br><br>
-                        <strong>Gain:</strong> Wzmocnienie sygnału - sprawia że obraz jest jaśniejszy. Zbyt wysoki gain dodaje szum.<br><br>
-                        <strong>TGC (Time Gain Compensation):</strong> Kompensuje osłabienie sygnału na głębokości - to 8 suwaków regulujących jasność w różnych głębościach.
+                        <strong>Focal Zone (Strefa ogniskowania):</strong> Najwęźsze miejsce wiązki ultradźwięków, gdzie rozdzielczość jest najlepsza. Przesunięcie fokusa zmienia głębokość tej strefy i ostrość struktur w jej obrębie [web:19][web:168].<br><br>
+                        <strong>Frequency (Częstotliwość):</strong> Wyższa częstotliwość poprawia rozdzielczość, ale pogarsza penetrację; niższa – odwrotnie, lepsza penetracja kosztem szczegółów [web:113][web:31].<br><br>
+                        <strong>Gain / TGC:</strong> Gain ustawia globalną jasność obrazu, a TGC kompensuje zanik sygnału w głębi. Krzywa TGC zwykle rośnie ku dołowi, aby utrzymać zbliżoną jasność tkanek na różnych głębokościach [web:21][web:91].<br><br>
+                        <strong>Dynamic Range:</strong> Średnie wartości DR zapewniają zbalansowany kontrast i widoczność subtelnych różnic echogeniczności; skrajne DR mogą obraz „spłaszczyć” lub zrobić go zbyt agresywnie kontrastowym [web:19][web:31].
                     </div>
                     <div class="key-relations">
                         <div class="relation-box">
@@ -446,10 +418,10 @@
                             <strong>Focus głębokie ↓</strong><br>→ Lepszy obraz dołu<br>→ Obniżyć częstotliwość
                         </div>
                         <div class="relation-box">
-                            <strong>Frame Rate ↑</strong><br>→ Zmniejszyć depth<br>→ Zmniejszyć DR
+                            <strong>Frame Rate ↑</strong><br>→ Zmniejszyć depth<br>→ Zmniejszyć CF box
                         </div>
                         <div class="relation-box">
-                            <strong>Resolution ↑</strong><br>→ Zwiększyć frequency<br>→ Zbliżyć focus
+                            <strong>Resolution ↑</strong><br>→ Zwiększyć frequency<br>→ Ustawić focus na strukturze
                         </div>
                     </div>
                 </div>
@@ -548,8 +520,12 @@
                         <span class="stat-value" id="penetration">Średnia</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-label">SNR:</span>
+                        <span class="stat-label">SNR (focal):</span>
                         <span class="stat-value" id="snr">20 dB</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">CNR (warstwy):</span>
+                        <span class="stat-value" id="cnr">0.0</span>
                     </div>
                     <div style="margin-top: 10px;">
                         <div style="font-size: 11px; margin-bottom: 5px; font-weight: 500;">Ogólna jakość:</div>
@@ -564,12 +540,12 @@
                 <div class="assistant-panel">
                     <div class="assistant-header">
                         <span class="assistant-icon">🤖</span>
-                        <span>Asystent AI - Analiza Głęboka</span>
+                        <span>Asystent AI</span>
                     </div>
-                    <div class="assistant-message" id="assistantMessage" style="white-space: pre-wrap; max-height: 300px; overflow-y: auto; font-size: 11px;">
-                        Witaj! Jestem Twoim wirtualnym asystentem. Zmieniaj parametry a ja będę Ci podpowiadał jak je optymalizować dla każdego aspektu obrazu.
+                    <div class="assistant-message" id="assistantMessage">
+                        Witaj! Jestem Twoim wirtualnym asystentem. Zmieniaj parametry a ja będę Ci podpowiadał jak je optymalizować.
                     </div>
-                    <div class="message-tip" id="messageTip" style="white-space: pre-wrap; max-height: 200px; overflow-y: auto; font-size: 10px;"></div>
+                    <div class="message-tip" id="messageTip"></div>
                 </div>
             </div>
         </div>
@@ -588,7 +564,6 @@
         const frSlider = document.getElementById('frSlider');
         const cfSelect = document.getElementById('cfSelect');
 
-        // Wyświetlacze wartości
         const displays = {
             focus: document.getElementById('focusValue'),
             gain: document.getElementById('gainValue'),
@@ -599,7 +574,6 @@
             cf: document.getElementById('cfValue')
         };
 
-        // Parametry
         let params = {
             focus: 3.0,
             gain: 50,
@@ -610,24 +584,17 @@
             cfBox: 2
         };
 
-        // TGC sliders
+        // TGC
         let tgcValues = [40, 45, 50, 55, 60, 65, 70, 75];
-
-        // Inicjalizacja TGC sliderów
         const tgcContainer = document.getElementById('tgcContainer');
+        tgcContainer.innerHTML = '';
         tgcValues.forEach((val, idx) => {
             const slider = document.createElement('input');
             slider.type = 'range';
-            slider.class = 'tgc-slider';
             slider.min = '0';
             slider.max = '100';
             slider.value = val;
-            slider.style.flex = '1';
-            slider.style.height = '100%';
-            slider.style.borderRadius = '2px';
-            slider.style.background = 'var(--color-secondary)';
-            slider.style.outline = 'none';
-            slider.style.cursor = 'pointer';
+            slider.className = 'tgc-slider';
             slider.addEventListener('input', (e) => {
                 tgcValues[idx] = parseInt(e.target.value);
                 updateImage();
@@ -636,7 +603,7 @@
             tgcContainer.appendChild(slider);
         });
 
-        // Event listeners
+        // Eventy
         focusSlider.addEventListener('input', (e) => {
             params.focus = parseFloat(e.target.value);
             displays.focus.textContent = params.focus.toFixed(1) + ' cm';
@@ -687,18 +654,198 @@
             updateAssistant();
         });
 
-        // Funkcja rysująca obraz USG
+        // Funkcja pomocnicza do funkcji ciągłej (Gauss)
+        function gaussianScore(x, target, sigma, maxScore) {
+            const diff = (x - target) / sigma;
+            return maxScore * Math.exp(-diff * diff);
+        }
+
+        // ROI i metryki z obrazu
+        function computeImageMetrics(pixelData) {
+            const width = canvas.width;
+            const height = canvas.height;
+            const data = pixelData.data;
+
+            function roiStats(yStart, yEnd) {
+                let sum = 0;
+                let sumSq = 0;
+                let n = 0;
+                for (let y = yStart; y < yEnd; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const idx = (y * width + x) * 4;
+                        const val = data[idx]; // grayscale
+                        sum += val;
+                        sumSq += val * val;
+                        n++;
+                    }
+                }
+                if (n === 0) return { mean: 0, std: 0 };
+                const mean = sum / n;
+                const variance = Math.max(0, sumSq / n - mean * mean);
+                const std = Math.sqrt(variance);
+                return { mean, std };
+            }
+
+            const nearEnd = Math.floor(height * 0.15);
+            const farStart = Math.floor(height * 0.8);
+            const near = roiStats(0, nearEnd);
+            const far = roiStats(farStart, height);
+
+            const focusY = (params.focus / params.depth) * height;
+            const focusHalfWindow = Math.floor(height * 0.1);
+            const focusStart = Math.max(0, Math.floor(focusY - focusHalfWindow));
+            const focusEnd = Math.min(height, Math.floor(focusY + focusHalfWindow));
+            const focus = roiStats(focusStart, focusEnd);
+
+            const midStart = Math.floor(height * 0.3);
+            const midEnd = Math.floor(height * 0.6);
+            const mid = roiStats(midStart, midEnd);
+
+            const snrFocus = focus.std > 1 ? focus.mean / focus.std : 0;
+            const snrFar = far.std > 1 ? far.mean / far.std : 0;
+
+            const cnr = Math.sqrt(focus.std * focus.std + mid.std * mid.std) > 0
+                ? Math.abs(focus.mean - mid.mean) /
+                  Math.sqrt(focus.std * focus.std + mid.std * mid.std)
+                : 0;
+
+            return {
+                near,
+                focus,
+                far,
+                mid,
+                snrFocus,
+                snrFar,
+                cnr
+            };
+        }
+
+        // Składowe scoringu z suwaków
+        function getFocusScore() {
+            const target = params.depth / 2;
+            return gaussianScore(params.focus, target, params.depth / 3, 10);
+        }
+
+        function getFrequencyDepthScore() {
+            let target;
+            if (params.depth <= 3) target = 14;
+            else if (params.depth <= 5) target = 12;
+            else target = 8;
+            return gaussianScore(params.frequency, target, 2.0, 15);
+        }
+
+        function getGainScore() {
+            const targetGain = 50;
+            return gaussianScore(params.gain, targetGain, 15, 10);
+        }
+
+        function getTGCScore() {
+            let smoothness = 0;
+            let badDrops = 0;
+            for (let i = 1; i < tgcValues.length; i++) {
+                const diff = tgcValues[i] - tgcValues[i - 1];
+                if (diff >= -3 && diff <= 8) smoothness++;
+                if (diff < -8) badDrops++;
+            }
+            const base = (smoothness / 7) * 15;
+            const penalty = badDrops * 3;
+            return Math.max(3, base - penalty);
+        }
+
+        function getDepthScore() {
+            const target = 4.5;
+            return gaussianScore(params.depth, target, 2, 10);
+        }
+
+        function getDRScore() {
+            const target = 60;
+            return gaussianScore(params.dr, target, 10, 10);
+        }
+
+        function getFRScore() {
+            const baseTarget = params.depth <= 4 ? 40 : params.depth <= 7 ? 50 : 60;
+            return gaussianScore(params.fr, baseTarget, 15, 8);
+        }
+
+        function getCFScore() {
+            if (params.cfBox === 0) return 7;
+            if (params.cfBox === 1 || params.cfBox === 2) return 6;
+            if (params.depth > 6 && params.fr < 40) return 2;
+            return 4;
+        }
+
+        // Składowa z metryk obrazu
+        function getImageMetricsScore(metrics) {
+            const sFocus = metrics.snrFocus;
+            const sFar = metrics.snrFar;
+            const cnr = metrics.cnr;
+
+            let score = 0;
+
+            if (sFocus >= 5) score += 8;
+            else if (sFocus >= 3) score += 5;
+            else if (sFocus >= 1.5) score += 3;
+
+            if (cnr >= 2.5) score += 7;
+            else if (cnr >= 1.5) score += 5;
+            else if (cnr >= 1.0) score += 3;
+
+            if (sFar >= 3) score += 5;
+            else if (sFar >= 1.5) score += 3;
+
+            return Math.min(20, score);
+        }
+
+        function computeQualityScore(metrics) {
+            const focusScore = getFocusScore();
+            const freqDepthScore = getFrequencyDepthScore();
+            const gainScore = getGainScore();
+            const tgcScore = getTGCScore();
+            const depthScore = getDepthScore();
+            const drScore = getDRScore();
+            const frScore = getFRScore();
+            const cfScore = getCFScore();
+            const imageScore = getImageMetricsScore(metrics);
+
+            const knobTotal = focusScore + freqDepthScore + gainScore + tgcScore +
+                              depthScore + drScore + frScore + cfScore;
+            const knobMax = 85;
+            const knobNormalized = Math.max(0, Math.min(1, knobTotal / knobMax));
+
+            const imageMax = 20;
+            const imageNormalized = Math.max(0, Math.min(1, imageScore / imageMax));
+
+            const combined = 0.6 * knobNormalized + 0.4 * imageNormalized;
+            const normalizedPercent = combined * 100;
+
+            return {
+                total: knobTotal,
+                imageScore,
+                normalized: normalizedPercent,
+                components: {
+                    focusScore,
+                    freqDepthScore,
+                    gainScore,
+                    tgcScore,
+                    depthScore,
+                    drScore,
+                    frScore,
+                    cfScore,
+                    imageScore
+                }
+            };
+        }
+
+        // Rysowanie obrazu
         function updateImage() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Tło
             const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
             gradient.addColorStop(0, '#1a1a1a');
             gradient.addColorStop(1, '#0a0a0a');
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Rysuj warstwowe tkanki z szumem (speckle)
             const pixelData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             const data = pixelData.data;
 
@@ -707,78 +854,60 @@
                 const x = pixelIndex % canvas.width;
                 const y = Math.floor(pixelIndex / canvas.width);
 
-                // Normalizuj współrzędne
                 const normY = y / canvas.height;
                 const depthCm = normY * params.depth;
 
-                // Generuj szum (speckle) - symulacja tkanki
-                let noise = Math.sin(x * 0.01) * Math.cos(y * 0.01) * 30 + 
-                           Math.random() * 40 - 20;
+                let noise = Math.sin(x * 0.01) * Math.cos(y * 0.01) * 30 +
+                            Math.random() * 40 - 20;
 
-                // Struktura warstwowa
                 let intensity = 30;
 
-                // Warstwa 1: Skóra i podskórna (0-1cm)
                 if (depthCm < 1.0) {
                     intensity = 40 + Math.sin(x * 0.05) * 15;
-                }
-                // Warstwa 2: Powięź (1-2cm)
-                else if (depthCm < 2.0) {
+                } else if (depthCm < 2.0) {
                     intensity = 50 + Math.cos(x * 0.03) * 20;
-                }
-                // Warstwa 3: Mięsień (2-4cm)
-                else if (depthCm < 4.0) {
+                } else if (depthCm < 4.0) {
                     intensity = 70 + Math.sin((x + y) * 0.02) * 25;
-                }
-                // Warstwa 4: Głębokie tkanki (4+cm)
-                else {
+                } else {
                     intensity = 50 + Math.sin(x * 0.01) * 15;
                 }
 
-                // Focal zone - zwiększ jasność w obszarze focus
                 const focusCenter = (params.focus / params.depth) * canvas.height;
                 const distFromFocus = Math.abs(y - focusCenter);
                 const focalWidth = 20 * (1 - Math.abs(params.frequency - 12) / 6);
-                
+
                 if (distFromFocus < focalWidth) {
                     const focalBoost = (1 - distFromFocus / focalWidth) * 40;
                     intensity += focalBoost;
                 }
 
-                // Attenuation z głębością
                 const attenuationFactor = Math.exp(-depthCm * params.frequency / 30);
                 intensity *= attenuationFactor;
 
-                // Aplikuj gain
                 intensity = intensity * (params.gain / 50);
 
-                // TGC kompensacja
                 const tgcIndex = Math.floor(normY * 7);
                 const tgcGain = tgcValues[tgcIndex] / 50;
                 intensity *= tgcGain;
 
-                // DR (Dynamic Range) - kontrola kontrastu
                 if (intensity < params.dr - 60) {
                     intensity = 0;
                 }
 
-                // Frequency wpływa na rozdzielczość i szum
                 const freqNoise = params.frequency > 12 ? Math.random() * 20 : Math.random() * 10;
                 intensity += freqNoise;
+                intensity += noise * 0.1;
 
-                // Clamp do 0-255
                 intensity = Math.max(0, Math.min(255, intensity));
 
-                // Ustaw RGBA
-                data[i] = intensity;      // R
-                data[i + 1] = intensity;  // G
-                data[i + 2] = intensity;  // B
-                data[i + 3] = 255;        // A
+                data[i] = intensity;
+                data[i + 1] = intensity;
+                data[i + 2] = intensity;
+                data[i + 3] = 255;
             }
 
             ctx.putImageData(pixelData, 0, 0);
 
-            // Rysuj fokus marker
             const focusY = (params.focus / params.depth) * canvas.height;
             ctx.strokeStyle = 'rgba(33, 200, 150, 0.7)';
             ctx.lineWidth = 2;
@@ -789,21 +918,20 @@
             ctx.stroke();
             ctx.setLineDash([]);
 
-            // Rysuj CF Box jeśli włączony
             if (params.cfBox > 0) {
                 drawCFBox();
             }
 
-            // Rysuj skalę głębokości
             drawDepthScale();
 
-            updateStats();
+            const metrics = computeImageMetrics(pixelData);
+            updateStats(metrics);
+            lastMetrics = metrics;
         }
 
         function drawCFBox() {
             const boxSizes = [0, 0.25, 0.4, 0.6];
             const boxHeightPercent = boxSizes[params.cfBox];
-            
             if (boxHeightPercent === 0) return;
 
             const focusY = (params.focus / params.depth) * canvas.height;
@@ -812,12 +940,10 @@
             const boxWidth = canvas.width * 0.3;
             const boxLeft = (canvas.width - boxWidth) / 2;
 
-            // Prostokątna obwódka CF box
             ctx.strokeStyle = 'rgba(50, 200, 200, 0.8)';
             ctx.lineWidth = 2;
             ctx.strokeRect(boxLeft, Math.max(0, boxTop), boxWidth, Math.min(canvas.height, boxHeight));
 
-            // Strzałka pokazująca kierunek Dopplera
             ctx.fillStyle = 'rgba(50, 200, 200, 0.6)';
             ctx.font = '12px Arial';
             ctx.fillText('CF Box', boxLeft + 5, Math.max(15, boxTop + 15));
@@ -835,401 +961,167 @@
             }
         }
 
-        function updateStats() {
-            // Rozdzielczość osiowa (axial) - zależy od długości impulsu i częstotliwości
+        function updateStats(metrics) {
+            const c = 1.54;
             const pulseLength = 1 / params.frequency;
-            const axialRes = (pulseLength * 0.5).toFixed(2);
+            const axialRes = (c * pulseLength * 0.5).toFixed(2);
             document.getElementById('axialRes').textContent = axialRes + ' mm';
 
-            // Rozdzielczość boczna (lateral) - zależy od fokusa i częstotliwości
             const focalZoneWidth = 0.3 + (12 - params.frequency) * 0.05;
             const lateralRes = (focalZoneWidth * 0.8).toFixed(2);
             document.getElementById('lateralRes').textContent = lateralRes + ' mm';
 
-            // Penetracja
             const attenuation = Math.exp(-params.depth * params.frequency / 30);
             let penetrationText = 'Słaba';
             if (attenuation > 0.5) penetrationText = 'Średnia';
             if (attenuation > 0.7) penetrationText = 'Dobra';
             document.getElementById('penetration').textContent = penetrationText;
 
-            // SNR (Signal-to-Noise Ratio)
-            const snr = 20 - params.frequency + params.gain / 2.5 - params.depth * 2;
-            document.getElementById('snr').textContent = snr.toFixed(0) + ' dB';
+            const snrDb = metrics.snrFocus > 0 ? 20 * Math.log10(metrics.snrFocus) : 0;
+            document.getElementById('snr').textContent = snrDb.toFixed(0) + ' dB';
 
-            // Ogólna jakość
-            const axialScore = (1 - Math.abs(params.frequency - 12) / 6) * 25;
-            const gainScore = (params.gain > 30 && params.gain < 70) ? 25 : 15;
-            const focusScore = (params.focus > 1 && params.focus < 5) ? 25 : 15;
-            const tgcScore = calculateTGCQuality();
-            const totalQuality = axialScore + gainScore + focusScore + tgcScore;
+            document.getElementById('cnr').textContent = metrics.cnr.toFixed(2);
 
+            const quality = computeQualityScore(metrics);
             const qualityBar = document.getElementById('qualityBar');
-            const qualityPercent = (totalQuality / 100) * 100;
-            qualityBar.style.width = qualityPercent + '%';
+            qualityBar.style.width = quality.normalized.toFixed(0) + '%';
 
             const qualityBarDiv = qualityBar.closest('.quality-bar');
             qualityBarDiv.className = 'quality-bar';
-            if (qualityPercent > 70) {
+            if (quality.normalized >= 70) {
                 qualityBarDiv.classList.add('good');
-            } else if (qualityPercent > 40) {
+            } else if (quality.normalized >= 40) {
                 qualityBarDiv.classList.add('warning');
             } else {
                 qualityBarDiv.classList.add('bad');
             }
+
+            lastQuality = quality;
         }
 
-        function calculateTGCQuality() {
-            // Sprawdź czy TGC jest rozsądnie ustawiony (powinna być krzywa rosnąca)
-            let score = 25;
-            let prevVal = tgcValues[0];
-            let isMonotonic = true;
-
-            for (let i = 1; i < tgcValues.length; i++) {
-                if (tgcValues[i] < prevVal - 10) {
-                    isMonotonic = false;
-                }
-                prevVal = tgcValues[i];
-            }
-
-            return isMonotonic ? 25 : 10;
-        }
+        let lastMetrics = null;
+        let lastQuality = null;
 
         function updateAssistant() {
-            const advice = generateAdvice();
-            const messageDiv = document.getElementById('assistantMessage');
-            const tipDiv = document.getElementById('messageTip');
-            
-            messageDiv.textContent = advice.message;
-            tipDiv.textContent = advice.tip;
-
-            // Wyświetl score na koniec
-            const scorePercent = Math.round((advice.score / advice.maxScore) * 100);
-            tipDiv.innerHTML += `<br><br><strong>Ogólny score konfiguracji: ${scorePercent}%</strong>`;
+            if (!lastMetrics || !lastQuality) return;
+            const advice = generateAdvice(lastMetrics, lastQuality);
+            document.getElementById('assistantMessage').textContent = advice.message;
+            document.getElementById('messageTip').textContent = advice.tip;
         }
 
-        function generateAdvice() {
-            let messages = [];
-            let tips = [];
-            let score = { focus: 0, frequency: 0, gain: 0, tgc: 0, dr: 0, fr: 0, cf: 0 };
+        function generateAdvice(metrics, quality) {
+            const c = quality.components;
 
-            // ===== 1. ANALIZA FOCUS =====
-            if (params.focus < 0.8) {
-                messages.push('📍 Focus BARDZO PŁYTKO (<0.8cm) - tylko skóra i podskórna');
-                if (params.frequency < 12) {
-                    tips.push('🔧 PŁYTKO + NISKA FREQ: Zwiększ do 15-18 MHz dla super rozdzielczości skóry.');
-                } else if (params.frequency > 15) {
-                    tips.push('✅ Doskonała kombinacja dla badania skóry i struktur powierzchniowych.');
-                    score.focus = 25;
-                } else {
-                    tips.push('💡 Bać się możemy attenuation na krawędzi wiązki, rozważ zwiększenie gain-u.');
-                }
-            } else if (params.focus < 1.5) {
-                messages.push('📍 Focus PŁYTKO (0.8-1.5cm) - powięź i górne mięśnie');
-                if (params.frequency < 10) {
-                    messages.push('⚠️ PŁYTKO + NISKA FREQ = nieoptymalne! Zwiększ do 12-15 MHz.');
-                    tips.push('🎯 Przy płytkim focus powinna być WYŻSZA częstotliwość dla lepszej rozdzielczości.');
-                } else if (params.frequency >= 12 && params.frequency <= 15) {
-                    messages.push('✅ Optymalna kombinacja dla badania powierzchniowych struktur MSK.');
-                    score.focus = 25;
-                    score.frequency = 20;
-                    tips.push('🔬 Focal zone jest tutaj najbliżej - obserwuj zmianę kontrastu.');
-                }
-            } else if (params.focus >= 1.5 && params.focus <= 3.0) {
-                messages.push('📍 Focus ŚREDNI (1.5-3cm) - mięśnie, ścięgna, nerwy');
-                if (params.frequency >= 10 && params.frequency <= 14) {
-                    messages.push('✅ IDEALNA konfiguracja dla typowego badania MSK!');
-                    score.focus = 30;
-                    score.frequency = 25;
-                    tips.push('🏆 To jest obszar pracy większości lekarzy - struktury MSK są tutaj najbardziej widoczne.');
-                    tips.push('💡 Focal zone zapewnia najlepszą rozdzielczość osiową w tym obszarze.');
-                } else if (params.frequency > 14) {
-                    tips.push('⚠️ Frequency zbyt wysoka dla tej głębokości - strać będziesz penetracji. Spróbuj 11-13 MHz.');
-                } else {
-                    tips.push('⚠️ Frequency zbyt niska - rozdzielczość będzie słaba. Zwiększ do 10-12 MHz.');
-                }
-            } else if (params.focus > 3.0 && params.focus <= 4.5) {
-                messages.push('📍 Focus GŁĘBOKI (3-4.5cm) - głębokie mięśnie, kości');
-                if (params.frequency <= 10) {
-                    messages.push('✅ Dobra kombinacja dla struktur głębokich.');
-                    score.focus = 20;
-                    score.frequency = 18;
-                    tips.push('🔊 Attenuation jest znaczna - sprawdzaj że gain jest wystarczający (60-80%).');
-                    tips.push('📊 TGC musi rosnąć monotonicznie w tym scenariuszu - waż na 6,7,8 poziomach.');
-                } else if (params.frequency >= 11 && params.frequency <= 13) {
-                    tips.push('💡 Można podnieść frequency do 14 MHz jeśli potrzebujesz lepszej rozdzielczości.');
-                } else {
-                    tips.push('⚠️ Frequency zbyt wysoka na tej głębokości - zmniejsz do 10-12 MHz.');
-                }
-            } else if (params.focus > 4.5) {
-                messages.push('📍 Focus BARDZO GŁĘBOKI (>4.5cm) - struktury aż 5-6cm pod skórą');
-                if (params.frequency > 12) {
-                    messages.push('⚠️ GŁĘBOKIE + WYSOKA FREQ = problem! Częstotliwość będzie całkowicie tłumiona.');
-                    tips.push('❌ Zmniejsz do 8-10 MHz - to jedyny sposób aby sięgnąć tak głębokie.');
-                } else if (params.frequency <= 9) {
-                    messages.push('✅ Prawidłowa niska częstotliwość dla bardzo głębokich struktur.');
-                    score.focus = 15;
-                    score.frequency = 15;
-                    tips.push('⚠️ Rozdzielczość będzie słaba, ale to kosztem penetracji. Niech się dzieje.');
-                } else {
-                    tips.push('💡 Frequency w porządku, ale gain musi być 70-90% aby przejść aż tam.');
-                }
-            }
+            let message = '';
+            let tip = '';
 
-            // ===== 2. ANALIZA FREQUENCY =====
-            const expectedFreqForDepth = 18 - (params.depth * 1.8);
-            const freqDeviation = Math.abs(params.frequency - expectedFreqForDepth);
-
-            if (params.frequency < 7) {
-                messages.push('🔉 Frequency ZBYT NISKA (<7 MHz) - ultrasound jest niemal nieużyteczny');
-                tips.push('❌ Tylko do bardzo głębokich struktur (>5cm). Poza tym praktycznie nic nie zobaczysz.');
-                score.frequency = 3;
-            } else if (params.frequency >= 7 && params.frequency < 10) {
-                if (params.depth >= 5) {
-                    messages.push('🔉 Frequency niska (7-10 MHz) - świadomie dla penetracji');
-                    tips.push('✅ To jest kompromis: penetracja > rozdzielczość. OK dla głębokich struktur.');
-                    score.frequency = 15;
-                } else {
-                    messages.push('🔉 Frequency niska (7-10 MHz) - ale focus jest płytko?');
-                    tips.push('⚠️ Marmujesz potencjał rozdzielczości. Podnieś frequency do 12-15 MHz.');
-                    score.frequency = 8;
-                }
-            } else if (params.frequency >= 10 && params.frequency <= 14) {
-                if (freqDeviation < 2) {
-                    messages.push('✅ Frequency OPTYMALNA (10-14 MHz) - uniwersalna dla MSK');
-                    score.frequency = 28;
-                    tips.push('🏆 To jest sweet spot - balans rozdzielczości i penetracji.');
-                    tips.push('💡 Większość sond liniowych pracuje w tym range.');
-                } else if (params.frequency > expectedFreqForDepth) {
-                    tips.push(`💡 Dla tej głębokości (${params.depth.toFixed(1)}cm), ${expectedFreqForDepth.toFixed(0)} MHz byłaby bardziej optymalna.`);
-                }
-            } else if (params.frequency >= 15 && params.frequency <= 18) {
-                if (params.depth <= 2.5) {
-                    messages.push('🔊 Frequency wysoka (15-18 MHz) - super dla struktur bardzo płytkich');
-                    tips.push('✅ Rozdzielczość jest na maksimum. Ale strać penetracji poniżej 1.5cm.');
-                    score.frequency = 22;
-                } else {
-                    messages.push('🔊 Frequency zbyt wysoka - attenuation będzie gigantyczny!');
-                    tips.push('❌ Zmniejsz do 11-13 MHz jeśli badasz coś głębszego niż 2cm.');
-                    score.frequency = 5;
-                }
-            }
-
-            // ===== 3. ANALIZA GAIN =====
-            const focusAttenuation = Math.exp(-params.focus * params.frequency / 30);
-            const recommendedGain = 50 / focusAttenuation;
-
-            if (params.gain < 20) {
-                messages.push('🔊 Gain ZBYT NISKI (<20%) - obraz będzie czarny i pełen artefaktów');
-                tips.push('❌ Zwiększ gain do minimum 40% - ryzykujesz że nic nie zobaczysz.');
-                score.gain = 2;
-            } else if (params.gain >= 20 && params.gain < 35) {
-                messages.push('🔊 Gain niski (20-35%) - możliwe że tracisz detale');
-                if (params.focus > 3) {
-                    tips.push('⚠️ Dla takiego fokusa, gain powinien być wyższy (55-70%).');
-                } else {
-                    tips.push('💡 Dla płytkich struktur ok, ale sprawdzaj czy widać wszystkie detale.');
-                }
-                score.gain = 12;
-            } else if (params.gain >= 35 && params.gain < 45) {
-                messages.push('🔊 Gain niedostateczny (35-45%)');
-                if (params.depth > 5 || params.frequency < 10) {
-                    tips.push('⚠️ Dla głębokich struktur lub niskiej freq, podnieś do 55-70%.');
-                }
-                score.gain = 18;
-            } else if (params.gain >= 45 && params.gain <= 70) {
-                messages.push('✅ Gain OPTYMALNY (45-70%)');
-                score.gain = 30;
-                if (params.gain <= 55) {
-                    tips.push('💡 W dolnym range (45-55%): lepiej, gdy masz dobrą penetrację i TGC.');
-                } else {
-                    tips.push('💡 W górnym range (60-70%): bardziej agresywny, gdy potrzebujesz kontrastu.');
-                }
-            } else if (params.gain > 70 && params.gain <= 85) {
-                messages.push('⚠️ Gain zbyt wysoki (70-85%) - widoczne będą artefakty i szum');
-                tips.push('🔊 Zamiast dalej podnoszić gain, zwiększ TGC na głębokim końcu (poziomy 6,7,8).');
-                tips.push('📊 Reguła: 1% gain = około 0.5 dB SNR, TGC też może to zrobić bez artefaktów.');
-                score.gain = 15;
-            } else if (params.gain > 85) {
-                messages.push('❌ Gain EKSTREMNIE WYSOKI (>85%) - obraz będzie szumem');
-                tips.push('❌ To jest najczęstszy błąd: zamiast optymalizować, zwiększają tylko gain.');
-                tips.push('💡 Czasami mniej gain + dobra TGC = lepszy obraz niż sam high gain.');
-                score.gain = 3;
-            }
-
-            // ===== 4. ANALIZA TGC =====
-            const tgcGradient = tgcValues[7] - tgcValues[0];
-            const tgcRegularGradient = tgcValues.slice(0, 5).every((v, i, arr) => i === 0 || v >= arr[i-1] - 5);
-            const avgTGC = tgcValues.reduce((a, b) => a + b) / tgcValues.length;
-
-            if (params.depth > 4 && tgcGradient < 5) {
-                messages.push('📊 TGC PROBLEM: Płaska krzywa na dużej głębokości!');
-                tips.push('❌ Dla głębokich badań TGC MUSI rosnąć. Attenuation jest ~ 3dB per cm.');
-                tips.push('💡 Spróbuj: poziom 1-3 = 40-50%, poziomy 6-8 = 75-85%.');
-                score.tgc = 5;
-            } else if (params.depth <= 3 && tgcGradient > 30) {
-                messages.push('📊 TGC: Zaostrzony profil dla mało głębokich struktur');
-                tips.push('💡 Ok, ale obserwuj czy na powierzchni nie ma zbyt dużego wzmocnienia.');
-                score.tgc = 18;
-            } else if (tgcRegularGradient) {
-                messages.push('✅ TGC PRAWIDŁOWY: Monotonicznie rosnący profil');
-                score.tgc = 28;
-                if (params.gain > 65) {
-                    tips.push('💡 Gain + TGC razem działają dobrze. Obserwuj aby szum się nie pojawił.');
-                } else {
-                    tips.push('💡 Ta konfiguracja TGC + gain powinna dać czysty obraz na całej głębokości.');
-                }
+            if (quality.normalized >= 80) {
+                message = '✅ Konfiguracja bardzo dobra, zarówno ustawienia jak i metryki obrazu wyglądają solidnie.';
+            } else if (quality.normalized >= 60) {
+                message = '👌 Konfiguracja niezła – obraz jest użyteczny, ale można go jeszcze lekko dopracować.';
+            } else if (quality.normalized >= 40) {
+                message = '⚠️ Obraz jest akceptowalny, ale kilka parametrów oraz metryk obrazu jest wyraźnie suboptymalnych.';
             } else {
-                messages.push('⚠️ TGC: Nieregularna krzywa - może być niestabilna');
-                tips.push('🔧 Idealnie by było: monotoniczny wzrost, bez skoków między poziomami.');
-                score.tgc = 12;
+                message = '❗ Ustawienia i metryki obrazu sugerują słabą jakość – spróbujmy je poprawić krok po kroku.';
             }
 
-            // ===== 5. ANALIZA DEPTH =====
-            if (params.depth < 2) {
-                messages.push('📏 Depth BARDZO MAŁY (<2cm) - только skóra');
-                tips.push('💡 Ok dla ultrasonografii skóry, ale dla typowego MSK potrzebujesz 3-5cm.');
-                score.depth = 8;
-            } else if (params.depth >= 2 && params.depth < 3.5) {
-                messages.push('📏 Depth PŁYTKI (2-3.5cm) - skóra + powięź + górne mięśnie');
-                if (params.frequency >= 12) {
-                    messages.push('✅ Dobra kombinacja dla powierzchniowych ścięgien i nerwów.');
-                    score.depth = 24;
-                } else {
-                    tips.push('💡 Przy takiej głębokości możesz podnieść frequency powyżej 12 MHz.');
-                }
-            } else if (params.depth >= 3.5 && params.depth <= 6) {
-                messages.push('📏 Depth OPTYMALNY (3.5-6cm) - całe mięśnie i części kości');
-                score.depth = 30;
-                tips.push('🏆 To jest standardowy range dla badania MSK. Większość struktur jest tu widoczna.');
-                if (params.frequency >= 10 && params.frequency <= 13) {
-                    tips.push('✅ Frequency w tym range idealnie pasuje do tej głębokości.');
-                }
-            } else if (params.depth > 6 && params.depth <= 8) {
-                messages.push('📏 Depth GŁĘBOKI (6-8cm) - struktur blisko kości miednicy');
-                if (params.frequency <= 10) {
-                    tips.push('✅ Niska frequency jest słuszna dla takiej głębokości.');
-                } else {
-                    tips.push('⚠️ Frequency powinna być niższa (8-10 MHz) dla takiej głębokości.');
-                }
-                score.depth = 18;
-            } else if (params.depth > 8) {
-                messages.push('📏 Depth EKSTREMNIE GŁĘBOKI (>8cm) - brzeg możliwości');
-                tips.push('❌ Poniżej 10 MHz obraz będzie bardzo słaby. Czy naprawdę potrzebujesz tyle głębokości?');
-                tips.push('💡 Zwykle wystarczy 5-6cm. Głębiej = mniej detali.');
-                score.depth = 5;
+            const componentArray = [
+                { name: 'focus', score: c.focusScore },
+                { name: 'frequency', score: c.freqDepthScore },
+                { name: 'gain', score: c.gainScore },
+                { name: 'TGC', score: c.tgcScore },
+                { name: 'depth', score: c.depthScore },
+                { name: 'DR', score: c.drScore },
+                { name: 'frame rate', score: c.frScore },
+                { name: 'CF box', score: c.cfScore },
+                { name: 'image metrics', score: c.imageScore }
+            ];
+            componentArray.sort((a, b) => a.score - b.score);
+            const weakest = componentArray[0].name;
+
+            switch (weakest) {
+                case 'focus':
+                    if (params.focus < params.depth / 3) {
+                        tip = '📍 Focus jest zbyt płytko względem całej głębokości. Przesuń go w okolice badanej struktury (często środek obrazu) dla lepszej ostrości w ROI.';
+                    } else {
+                        tip = '📍 Focus jest zbyt głęboko – ogniskowanie poniżej interesującej struktury nie poprawi obrazu, a może pogorszyć near-field.';
+                    }
+                    break;
+                case 'frequency':
+                    if (params.depth <= 3 && params.frequency < 12) {
+                        tip = '🎯 Skanujesz płytko, a częstotliwość jest niska – podnieś ją (14–18 MHz), aby poprawić rozdzielczość w near-field.';
+                    } else if (params.depth > 5 && params.frequency > 10) {
+                        tip = '🎯 Przy większej głębokości obniż częstotliwość (7–9 MHz), by poprawić penetrację i SNR w far-field.';
+                    } else {
+                        tip = '🎯 Delikatnie dopasuj częstotliwość do głębokości – im głębiej, tym trochę niższa częstotliwość.';
+                    }
+                    break;
+                case 'gain':
+                    if (params.gain > 75) {
+                        tip = '🔊 Gain bardzo wysoki – obraz może być przepalony i zaszumiony, szczególnie w near-field. Obniż gain i użyj TGC, by rozjaśnić tylko głębsze partie.';
+                    } else if (params.gain < 30) {
+                        tip = '🔊 Gain bardzo niski – obraz może być zbyt ciemny. Podnieś gain do ok. 40–60%, obserwując czy SNR w regionie fokusa się poprawia.';
+                    } else {
+                        tip = '🔊 Gain jest blisko akceptowalnego zakresu – spróbuj małych korekt (±5–10%) patrząc na stosunek sygnału do szumu w okolicy fokusa.';
+                    }
+                    break;
+                case 'TGC':
+                    tip = '📊 Krzywa TGC jest nieregularna. Ustaw ją jako łagodnie rosnącą w dół, aby SNR w far-field nie był dużo gorszy niż w okolicach fokusa.';
+                    break;
+                case 'depth':
+                    if (params.depth > 7) {
+                        tip = '📏 Głębokość jest bardzo duża; rozważ jej zmniejszenie tak, by najgłębsza interesująca struktura miała 1–2 cm marginesu dołu ekranu.';
+                    } else {
+                        tip = '📏 Sprawdź, czy struktura docelowa nie jest tuż przy dolnej krawędzi; zostaw niewielki margines, ale nie przesadzaj z dużą głębokością.';
+                    }
+                    break;
+                case 'DR':
+                    if (params.dr > 70) {
+                        tip = '🎚️ Dynamic Range jest szeroki – obraz może być mało kontrastowy. Zmniejsz DR do ok. 55–65 dB, aby poprawić CNR między warstwami.';
+                    } else {
+                        tip = '🎚️ Dynamic Range jest niski – kontrast mocny, ale subtelne struktury mogą znikać. Zwiększ DR w stronę 50–60 dB.';
+                    }
+                    break;
+                case 'frame rate':
+                    if (params.fr < 40 && params.depth > 6) {
+                        tip = '⏱️ Frame rate niski przy dużej głębokości – zmniejsz depth, redukuj CF box lub zwiększ FR, jeżeli oceniasz ruch struktur.';
+                    } else {
+                        tip = '⏱️ Jeśli oceniasz dynamiczne ruchy (ścięgna, stawy), zwiększ frame rate, pamiętając o wpływie depth i CF box.';
+                    }
+                    break;
+                case 'CF box':
+                    if (params.cfBox === 3 && params.fr < 50) {
+                        tip = '📦 Duży CF Box może mocno obniżać frame rate i jakość B-mode. Zmniejsz rozmiar lub wyłącz CF, jeśli głównie oceniasz anatomię.';
+                    } else {
+                        tip = '📦 Używaj najmniejszego CF box obejmującego tylko interesujące naczynie, aby zachować wyższy frame rate.';
+                    }
+                    break;
+                case 'image metrics':
+                    if (metrics.snrFocus < 2) {
+                        tip = '🔍 SNR w regionie fokusa jest niski – spróbuj zwiększyć gain i/lub obniżyć częstotliwość (przy głębszych strukturach), a także dopasuj TGC w tym zakresie.';
+                    } else if (metrics.cnr < 1.5) {
+                        tip = '🔍 CNR między warstwami jest niski – dostosuj DR oraz gain/TGC tak, by różnice szarości między powięzią a mięśniem były wyraźniejsze.';
+                    } else if (metrics.snrFar < 1.5 && params.depth > 5) {
+                        tip = '🔍 Far-field jest mocno zaszumiony i słabo widoczny – obniż częstotliwość, podnieś nieco dolne TGC i rozważ minimalne zwiększenie gainu.';
+                    } else {
+                        tip = '🔍 Metryki obrazu są średnie – skup się na drobnych korektach DR oraz TGC, obserwując jak zmienia się kontrast między warstwami.';
+                    }
+                    break;
             }
 
-            // ===== 6. ANALIZA DYNAMIC RANGE =====
-            if (params.dr < 40) {
-                messages.push('📊 Dynamic Range ZBYT NISKI (<40dB) - wysokokontrast ale bez szarości');
-                tips.push('⚠️ Stratisz subtelnych detali. Ekstrahin kontrast na poziomie 40-50dB.');
-                score.dr = 8;
-            } else if (params.dr >= 40 && params.dr < 50) {
-                messages.push('📊 Dynamic Range MOCNY (40-50dB) - wysoki kontrast');
-                tips.push('💡 Dobry dla początkujących - wyraźne krawędzie, mniej szumem.');
-                score.dr = 18;
-            } else if (params.dr >= 50 && params.dr <= 70) {
-                messages.push('✅ Dynamic Range OPTYMALNY (50-70dB)');
-                score.dr = 28;
-                if (params.dr <= 60) {
-                    tips.push('💡 W dolnym range (50-60): łatwiej wychwytywać subtelne różnice tkanki.');
-                } else {
-                    tips.push('💡 W górnym range (60-70): bardziej tolerancyjny na szum, ale mniej kontrastu.');
-                }
-            } else if (params.dr > 70 && params.dr < 80) {
-                messages.push('📊 Dynamic Range szerokie (70-80dB) - bardzo subtelne detale');
-                tips.push('💡 Jeśli gain i TGC są dobrze ustawione, zobaczysz dużo szarych gradacji.');
-                score.dr = 22;
-            } else {
-                messages.push('📊 Dynamic Range MAKSYMALNY (80dB) - wszechstronny');
-                tips.push('⚠️ Wymaga perfekcyjnych ustawień gain i TGC. Inaczej obraz będzie "szary".');
-                score.dr = 15;
+            if (params.focus < params.depth / 3 && params.frequency < 10) {
+                tip += ' Dla tak płytkiego fokusa warto podnieść częstotliwość >12 MHz, co poprawi rozdzielczość near-field bez nadmiernego pogorszenia penetracji.';
+            }
+            if (params.focus > (2 * params.depth) / 3 && params.frequency > 13) {
+                tip += ' Przy głębokim fokusie bardzo wysoka częstotliwość będzie silnie tłumiona – obniż ją, jeśli far-field jest wyraźnie ciemny i zaszumiony.';
             }
 
-            // ===== 7. ANALIZA FRAME RATE =====
-            const minFRForDepth = Math.max(20, 80 - params.depth * 10);
-
-            if (params.fr < 25) {
-                messages.push('⏱️ Frame Rate BARDZO NISKI (<25fps) - video będzie "marszczące się"');
-                tips.push('❌ Artefakty ruchowe. Jeśli badasz dynamikę (ruchy mięśni), zwiększ do 40-60 fps.');
-                score.fr = 5;
-            } else if (params.fr >= 25 && params.fr < 40) {
-                messages.push('⏱️ Frame Rate niski (25-40fps) - ok dla statycznych struktur');
-                if (params.cfBox > 0) {
-                    tips.push('⚠️ Jeśli korzystasz z CF Box, zwiększ FR do 50+ aby uniknąć aliasingu.');
-                }
-                score.fr = 15;
-            } else if (params.fr >= 40 && params.fr <= 70) {
-                messages.push('✅ Frame Rate OPTYMALNY (40-70fps)');
-                score.fr = 27;
-                tips.push('🏆 Dobry balans między jakością obrazu a płynnością video.');
-            } else if (params.fr > 70 && params.fr <= 90) {
-                messages.push('⏱️ Frame Rate wysoki (70-90fps) - bardzo płynne video');
-                tips.push('💡 Świetnie do badania dynamicznego (ruchy, przepływ). Bierze na obraz: depth i gain.');
-                score.fr = 22;
-            } else {
-                messages.push('⏱️ Frame Rate maksymalny (>90fps) - ultra płynny');
-                tips.push('⚠️ Może wymagać zmniejszenia depth lub DR, aby osiągnąć takie FR.');
-                score.fr = 18;
-            }
-
-            // ===== 8. ANALIZA CF BOX =====
-            if (params.cfBox === 0) {
-                messages.push('📦 CF Box: WYŁĄCZONY - tylko B-mode');
-                tips.push('💡 OK dla statycznego badania struktur. Jeśli badasz przepływ, włącz CF Box.');
-                score.cf = 15;
-            } else if (params.cfBox === 1) {
-                messages.push('📦 CF Box: MAŁY - wąski obszar Dopplera');
-                if (params.focus < 2) {
-                    tips.push('⚠️ CF Box mały + focus płytko = może nie złapać celu. Zwiększ rozmiar.');
-                } else {
-                    tips.push('✅ Mały CF Box = szybkie frame rate. Dobry dla precyzyjnych badań naczyń.');
-                }
-                score.cf = 20;
-            } else if (params.cfBox === 2) {
-                messages.push('📦 CF Box: ŚREDNI - standard dla MSK Doppler');
-                tips.push('✅ Optymalny rozmiar. Obejmuje najczęstsze struktury przesiewowe.');
-                if (params.fr < 50) {
-                    tips.push('💡 Jeśli FR spadł poniżej 40fps, zmniejsz rozmiar CF Box.');
-                }
-                score.cf = 28;
-            } else if (params.cfBox === 3) {
-                messages.push('📦 CF Box: DUŻY - większy obszar Dopplera');
-                if (params.fr > 40) {
-                    tips.push('✅ Duży CF Box jest ok jeśli masz wystarczający FR (40+).');
-                } else {
-                    tips.push('⚠️ Duży CF Box drastycznie obniża FR. Dla tego badania (depth, gain) zmniejsz rozmiar.');
-                }
-                tips.push('💡 Duży CF Box dobry dla badania głównych naczyń (arteriae, venae).');
-                score.cf = 20;
-            }
-
-            // ===== PODSUMOWANIE =====
-            const totalScore = Object.values(score).reduce((a, b) => a + b, 0);
-            const maxScore = 30 * 8; // 8 kategorii x max 30 pkt
-
-            let mainMessage = messages.join('\n');
-            let allTips = tips.slice(0, 4).join('\n');
-
-            if (totalScore > 200) {
-                mainMessage = '🏆 DOSKONAŁA KONFIGURACJA!\n' + mainMessage;
-            } else if (totalScore > 150) {
-                mainMessage = '✅ DOBRA KONFIGURACJA\n' + mainMessage;
-            } else if (totalScore > 100) {
-                mainMessage = '⚠️ ŚREDNIA KONFIGURACJA - istnieją polepszenia\n' + mainMessage;
-            } else {
-                mainMessage = '❌ SŁABA KONFIGURACJA - duże możliwości poprawy\n' + mainMessage;
-            }
-
-            return { message: mainMessage, tip: allTips, score: totalScore, maxScore: maxScore };
+            return { message, tip };
         }
 
-        // Inicjalizacja
         updateImage();
         updateAssistant();
 
-        // Animacja
         function animate() {
             updateImage();
             requestAnimationFrame(animate);
